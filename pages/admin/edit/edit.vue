@@ -41,14 +41,21 @@
       <!-- 商品价格 -->
       <view class="form-item">
         <text class="form-label">商品价格</text>
-        <input
-          v-model="formRef.price"
-          type="digit"
-          class="form-input"
-          placeholder="请输入商品价格"
-          @input="onPriceInput"
-          :maxlength="10"
-        />
+        <input v-model="formRef.price" type="digit" class="form-input" placeholder="请输入商品价格" @input="onPriceInput"
+          :maxlength="10" />
+      </view>
+
+      <!-- 商品分类 -->
+      <view class="form-item">
+        <text class="form-label">商品分类</text>
+        <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
+          <view class="category-list">
+            <view v-for="category in categoriesRef" :key="category.objectId" class="category-item"
+              :class="{ active: selectedCategoryId === category.objectId }" @click="onSelectCategory(category)">
+              <text class="category-name">{{ category.name }}</text>
+            </view>
+          </view>
+        </scroll-view>
       </view>
     </scroll-view>
 
@@ -66,38 +73,74 @@ import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
 const AV = getApp().globalData.AV
 
+// 分类数据
+const categoriesRef = ref([])
+const selectedCategoryId = ref('')
+
+// 查询分类列表
+async function queryCategoryList() {
+  const query = new AV.Query('Category')
+  query.ascending('sort') // 按sort升序
+  const results = await query.find()
+  return results.map(item => item.toJSON())
+}
+
+// 选择分类
+function onSelectCategory(category) {
+  selectedCategoryId.value = category.objectId
+  return Promise.resolve()
+}
+
 onLoad(async ({ mode, objectId }) => {
   console.log('onLoad', { mode, objectId })
   modeRef.value = mode
-  if(objectId) {
-    goodsIdRef.value = objectId
-    try {
-      uni.showLoading({ title: '加载中...' })
 
-      // 查询商品详情
-      const query = new AV.Query('Goods')
-      const goods = await query.get(objectId)
+  try {
+    // 1. 先加载分类列表
+    const categories = await queryCategoryList()
+    categoriesRef.value = categories
 
-      // 设置表单数据
-      formRef.value = {
-        images: goods.get('images') || [],
-        name: goods.get('name'),
-        description: goods.get('description'),
-        price: goods.get('price').toFixed(2)
-      }
-
-      uni.hideLoading()
-    } catch(error) {
-      console.error('加载商品详情失败:', error)
-      uni.showToast({
-        title: '加载失败:' + error.message,
-        icon: 'none'
-      })
-      // 加载失败返回上一页
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 1500)
+    // 默认选中第一个分类
+    if(categories.length > 0) {
+      selectedCategoryId.value = categories[0].objectId
     }
+
+    // 2. 如果是编辑模式,加载商品详情
+    if(objectId) {
+      goodsIdRef.value = objectId
+      try {
+        uni.showLoading({ title: '加载中...' })
+
+        // 查询商品详情
+        const query = new AV.Query('Goods')
+        const goods = await query.get(objectId)
+
+        // 设置表单数据
+        formRef.value = goods.toJSON()
+        // 设置选中的分类
+        const category = goods.get('categoryRef')
+        if(category) {
+          selectedCategoryId.value = category.id
+        }
+
+        uni.hideLoading()
+      } catch(error) {
+        console.error('加载商品详情失败:', error)
+        uni.showToast({
+          title: '加载失败:' + error.message,
+          icon: 'none'
+        })
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 1500)
+      }
+    }
+  } catch(error) {
+    console.error('加载分类列表失败:', error)
+    uni.showToast({
+      title: '加载失败:' + error.message,
+      icon: 'none'
+    })
   }
 })
 
@@ -228,6 +271,12 @@ async function onSubmitForm() {
     return Promise.resolve()
   }
 
+  // 分类验证
+  if(!selectedCategoryId.value) {
+    uni.showToast({ title: '请选择商品分类', icon: 'none' })
+    return Promise.resolve()
+  }
+
   try {
     uni.showLoading({ title: '提交中...' })
 
@@ -255,6 +304,9 @@ async function onSubmitForm() {
     goods.set('description', formRef.value.description)
     goods.set('price', priceNum)
     goods.set('images', imageFiles.map(file => file.url()))
+    // 设置分类关联
+    const category = AV.Object.createWithoutData('Category', selectedCategoryId.value)
+    goods.set('categoryRef', category)
 
     // 4. 保存商品
     await goods.save()
@@ -437,5 +489,36 @@ function onClickBack() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.category-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.category-list {
+  display: inline-flex;
+  padding: 8rpx 0;
+}
+
+.category-item {
+  padding: 12rpx 32rpx;
+  margin-right: 16rpx;
+  background: #f8f8f8;
+  border-radius: 32rpx;
+  transition: all 0.3s;
+}
+
+.category-item.active {
+  background: #07c160;
+}
+
+.category-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.category-item.active .category-name {
+  color: #fff;
 }
 </style>

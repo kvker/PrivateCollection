@@ -153,10 +153,11 @@ function onClickAdmin() {
         <view class="section-title">最近好物</view>
         <view class="items-grid">
           <view v-for="item in recentItemsRef" :key="item.id" class="item-card" @click="onClickItem(item)">
-            <view class="favorite-btn" @click.stop="onClickFavorite(item)">
+            <!-- TODO 收藏功能 -->
+            <!-- <view class="favorite-btn" @click.stop="onClickFavorite(item)">
               <image :src="item.isFavorite ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
                 class="favorite-icon" mode="aspectFit" />
-            </view>
+            </view> -->
             <image :src="item.image" mode="aspectFill" class="item-image"></image>
             <view class="item-info">
               <text class="item-name">{{ item.name }}</text>
