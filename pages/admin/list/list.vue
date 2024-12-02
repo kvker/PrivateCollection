@@ -46,6 +46,7 @@ onLoad(async () => {
 async function onRefresh() {
   if(isRefreshingRef.value) return
   isRefreshingRef.value = true
+  goodsListRef.value = []
   try {
     const goods = await queryGoodsList()
     goodsListRef.value = goods
@@ -128,7 +129,7 @@ async function onDeleteGoods({ objectId, name }) {
 // 点击商品
 function onClickGoods({ objectId }) {
   uni.navigateTo({
-    url: `/pages/admin/edit/edit?objectId=${objectId}&mode=view`
+    url: `/pages/admin/edit/edit?objectId=${objectId}&mode=edit`
   })
   return Promise.resolve()
 }
@@ -140,6 +141,10 @@ function onClickAdd() {
   })
   return Promise.resolve()
 }
+
+defineExpose({
+  onRefresh,
+})
 </script>
 
 <template>
@@ -155,21 +160,11 @@ function onClickAdd() {
     </view>
 
     <!-- 商品列表 -->
-    <scroll-view
-      class="goods-list"
-      scroll-y="true"
-      refresher-enabled="true"
-      :refresher-triggered="isRefreshingRef"
-      @refresherrefresh="onRefresh"
-      @scrolltolower="onLoadMore"
-    >
+    <scroll-view class="goods-list" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
+      @refresherrefresh="onRefresh" @scrolltolower="onLoadMore">
       <view class="goods-grid">
-        <view v-for="item in goodsListRef"
-          :key="item.objectId"
-          class="goods-card"
-          @click="onClickGoods(item)"
-          @longpress="onDeleteGoods(item)"
-        >
+        <view v-for="item in goodsListRef" :key="item.objectId" class="goods-card" @click="onClickGoods(item)"
+          @longpress="onDeleteGoods(item)">
           <image :src="item.images[0]" mode="aspectFill" class="goods-image" />
           <view class="goods-info">
             <text class="goods-name">{{ item.name }}</text>

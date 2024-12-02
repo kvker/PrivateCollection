@@ -169,16 +169,8 @@ function onClickAdmin() {
     </view>
 
     <!-- 管理入口 -->
-    <view
-      v-if="true"
-      class="admin-fab"
-      @click="onClickAdmin"
-    >
-      <image
-        src="/static/icons/add.png"
-        mode="aspectFit"
-        class="admin-icon"
-      />
+    <view v-if="true" class="admin-fab" @click="onClickAdmin">
+      <image src="/static/icons/add.png" mode="aspectFit" class="admin-icon" />
     </view>
   </view>
 </template>

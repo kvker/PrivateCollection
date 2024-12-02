@@ -7,7 +7,7 @@
       <view class="back-btn" @click="onClickBack">
         <image src="/static/icons/back.png" mode="aspectFit" class="back-icon" />
       </view>
-      <text class="nav-title">{{ modeRef === 'view' ? '商品详情' : '编辑商品' }}</text>
+      <text class="nav-title">{{ modeRef === 'add' ? '新增商品' : '编辑商品' }}</text>
     </view>
 
     <!-- 表单内容 -->
@@ -18,9 +18,9 @@
         <view class="image-list">
           <view v-for="(image, index) in formRef.images" :key="index" class="image-item">
             <image :src="image" mode="aspectFill" class="preview-image" @click="onPreviewImage({ index })" />
-            <view v-if="isEditableRef" class="delete-btn" @click="onDeleteImage({ index })">×</view>
+            <view class="delete-btn" @click="onDeleteImage({ index })">×</view>
           </view>
-          <view v-if="isEditableRef && formRef.images.length < 9" class="upload-btn" @click="onChooseImage">
+          <view v-if="formRef.images.length < 9" class="upload-btn" @click="onChooseImage">
             <text class="upload-icon">+</text>
           </view>
         </view>
@@ -29,26 +29,31 @@
       <!-- 商品名称 -->
       <view class="form-item">
         <text class="form-label">商品名称</text>
-        <input v-model="formRef.name" type="text" class="form-input" placeholder="请输入商品名称" :disabled="!isEditableRef" />
+        <input v-model="formRef.name" type="text" class="form-input" placeholder="请输入商品名称" />
       </view>
 
       <!-- 商品描述 -->
       <view class="form-item">
         <text class="form-label">商品描述</text>
-        <textarea v-model="formRef.description" class="form-textarea" placeholder="请输入商品描述"
-          :disabled="!isEditableRef" />
+        <textarea v-model="formRef.description" class="form-textarea" placeholder="请输入商品描述" />
       </view>
 
       <!-- 商品价格 -->
       <view class="form-item">
         <text class="form-label">商品价格</text>
-        <input v-model="formRef.price" type="digit" class="form-input" placeholder="请输入商品价格"
-          :disabled="!isEditableRef" />
+        <input
+          v-model="formRef.price"
+          type="digit"
+          class="form-input"
+          placeholder="请输入商品价格"
+          @input="onPriceInput"
+          :maxlength="10"
+        />
       </view>
     </scroll-view>
 
     <!-- 底部按钮 -->
-    <view v-if="isEditableRef" class="bottom-actions">
+    <view class="bottom-actions">
       <button class="submit-btn" @click="onSubmitForm">{{ submitTextRef }}</button>
     </view>
   </view>
@@ -78,7 +83,7 @@ onLoad(async ({ mode, objectId }) => {
         images: goods.get('images') || [],
         name: goods.get('name'),
         description: goods.get('description'),
-        price: goods.get('price')
+        price: goods.get('price').toFixed(2)
       }
 
       uni.hideLoading()
@@ -97,7 +102,7 @@ onLoad(async ({ mode, objectId }) => {
 })
 
 // 页面参数
-const modeRef = ref('add') // add, edit, view
+const modeRef = ref('add') // add, edit
 const goodsIdRef = ref(null)
 
 // 表单数据
@@ -107,9 +112,6 @@ const formRef = ref({
   description: '',
   price: ''
 })
-
-// 是否可编辑
-const isEditableRef = computed(() => modeRef.value !== 'view')
 
 // 按钮文本
 const submitTextRef = computed(() => {
@@ -125,8 +127,6 @@ const submitTextRef = computed(() => {
 
 // 选择图片
 function onChooseImage() {
-  if(!isEditableRef.value) return Promise.resolve()
-
   uni.chooseImage({
     count: 9,
     sizeType: ['compressed'],
@@ -170,7 +170,6 @@ function compressImage(path) {
 
 // 删除图片
 function onDeleteImage({ index }) {
-  if(!isEditableRef.value) return Promise.resolve()
   formRef.value.images.splice(index, 1)
   return Promise.resolve()
 }
@@ -184,10 +183,27 @@ function onPreviewImage({ index }) {
   return Promise.resolve()
 }
 
+// 价格输入验证
+function onPriceInput(e) {
+  const value = e.detail.value
+  // 只允许数字和小数点
+  let newValue = value.replace(/[^\d.]/g, '')
+  // 只允许一个小数点
+  if(newValue.split('.').length > 2) {
+    newValue = newValue.replace(/\.+/g, '.')
+  }
+  // 限制小数点后两位
+  if(newValue.includes('.')) {
+    const [integer, decimal] = newValue.split('.')
+    newValue = `${integer}.${decimal.slice(0, 2)}`
+  }
+  // 更新表单数据
+  formRef.value.price = newValue
+  return newValue
+}
+
 // 提交表单
 async function onSubmitForm() {
-  if(!isEditableRef.value) return Promise.resolve()
-
   // 表单验证
   if(!formRef.value.images.length) {
     uni.showToast({ title: '请上传商品图片', icon: 'none' })
@@ -205,13 +221,21 @@ async function onSubmitForm() {
     uni.showToast({ title: '请输入商品价格', icon: 'none' })
     return Promise.resolve()
   }
+  // 价格格式验证
+  const priceNum = Number(formRef.value.price)
+  if(isNaN(priceNum) || priceNum <= 0) {
+    uni.showToast({ title: '请输入有效的价格', icon: 'none' })
+    return Promise.resolve()
+  }
 
   try {
-    // 显示加载提示
     uni.showLoading({ title: '提交中...' })
 
     // 1. 先上传图片到LeanCloud
     const imageFiles = await Promise.all(formRef.value.images.map(async (imagePath) => {
+      if(imagePath.startsWith('http')) {
+        return { url: () => imagePath }
+      }
       const file = new AV.File(`goods_${Date.now()}.png`, {
         blob: {
           uri: imagePath,
@@ -220,14 +244,16 @@ async function onSubmitForm() {
       return file.save()
     }))
 
-    // 2. 创建商品对象
+    // 2. 创建或更新商品对象
     const Goods = AV.Object.extend('Goods')
-    const goods = new Goods()
+    const goods = modeRef.value === 'add' ?
+      new Goods() :
+      AV.Object.createWithoutData('Goods', goodsIdRef.value)
 
     // 3. 设置商品属性
     goods.set('name', formRef.value.name)
     goods.set('description', formRef.value.description)
-    goods.set('price', Number(formRef.value.price))
+    goods.set('price', priceNum)
     goods.set('images', imageFiles.map(file => file.url()))
 
     // 4. 保存商品
@@ -243,13 +269,18 @@ async function onSubmitForm() {
 
     // 6. 返回列表页并刷新
     setTimeout(() => {
-      const pages = getCurrentPages()
-      const listPage = pages[pages.length - 2]
-      if(listPage && listPage.$vm) {
-        // 触发列表页的刷新方法
-        listPage.$vm.onPullDownRefresh()
-      }
-      uni.navigateBack()
+      uni.navigateBack({
+        delta: 1,
+        success: () => {
+          // 获取当前页面栈
+          const pages = getCurrentPages()
+          const listPage = pages[pages.length - 1]
+          // 调用list页面的刷新方法
+          if(listPage && listPage.$vm && listPage.$vm.onRefresh) {
+            listPage.$vm.onRefresh()
+          }
+        }
+      })
     }, 1500)
 
   } catch(error) {
