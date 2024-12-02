@@ -215,7 +215,7 @@ async function onSubmitForm() {
 
     // 1. 先上传图片到LeanCloud
     const imageFiles = await Promise.all(formRef.value.images.map(async (imagePath) => {
-      if(imagePath.startsWith('http')) {
+      if(imagePath.startsWith('https')) {
         return { url: () => imagePath }
       }
       const file = new AV.File(`goods_${Date.now()}.png`, {
