@@ -1,3 +1,128 @@
+<script setup>
+import { ref } from 'vue'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
+import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
+
+const AV = getApp().globalData.AV
+
+// 页面数据
+const currentSwiperRef = ref(0)
+const goodsRef = ref(null)
+const imagesRef = ref([])
+const similarGoodsRef = ref([])
+
+// 查询商品详情
+async function queryGoodsDetail(objectId) {
+  const query = new AV.Query('Goods')
+  // 包含分类信息
+  query.include('categoryRef')
+  const goods = await query.get(objectId)
+  return goods.toJSON()
+}
+
+// 查询相似商品
+async function querySimilarGoods(categoryId, currentGoodsId) {
+  const query = new AV.Query('Goods')
+  // 同分类
+  const category = AV.Object.createWithoutData('Category', categoryId)
+  query.equalTo('categoryRef', category)
+  // 排除当前商品
+  query.notEqualTo('objectId', currentGoodsId)
+  // 最多4个
+  query.limit(4)
+  const results = await query.find()
+  return results.map(item => item.toJSON())
+}
+
+onLoad(async (options) => {
+  console.log('商品详情:', options.objectId)
+  try {
+    // 1. 加载商品详情
+    const goods = await queryGoodsDetail(options.objectId)
+    goodsRef.value = goods
+    imagesRef.value = goods.images || []
+
+    // 2. 加载相似商品
+    if(goods.categoryRef) {
+      const similarGoods = await querySimilarGoods(goods.categoryRef.objectId, goods.objectId)
+      similarGoodsRef.value = similarGoods
+    }
+  } catch(error) {
+    console.error('加载商品详情失败:', error)
+    uni.showToast({
+      title: '加载失败:' + error.message,
+      icon: 'none'
+    })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1500)
+  }
+})
+
+// 事件处理
+function onClickBack() {
+  uni.navigateBack()
+  return Promise.resolve()
+}
+
+function onClickShare() {
+  // 使用第一张图片作为分享图
+  const shareImage = imagesRef.value[0] || ''
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage']
+  })
+  return Promise.resolve()
+}
+
+// 分享给朋友
+onShareAppMessage(() => {
+  return {
+    title: '有友藏-' + goodsRef.value?.name,
+    path: `/pages/goods/goods-detail?objectId=${goodsRef.value?.objectId}`,
+    imageUrl: imagesRef.value[0]
+  }
+})
+
+function onSwiperChange(e) {
+  currentSwiperRef.value = e.detail.current
+  return Promise.resolve()
+}
+
+function onPreviewImage(index) {
+  uni.previewImage({
+    current: index,
+    urls: imagesRef.value
+  })
+  return Promise.resolve()
+}
+
+function onClickSimilarGoods(goods) {
+  uni.navigateTo({
+    url: `/pages/goods/goods-detail?objectId=${goods.objectId}`
+  })
+  return Promise.resolve()
+}
+
+function onClickChat() {
+  uni.openCustomerServiceChat({
+    extInfo: { url: 'https://work.weixin.qq.com/kfid/xxx' }, // 替换为实际的客服URL
+    corpId: 'xxxx', // 替换为实际的企业ID
+    success(res) {
+      console.log('打开客服成功')
+    },
+    fail(err) {
+      console.error('打开客服失败:', err)
+      uni.showToast({
+        title: '打开客服失败',
+        icon: 'none'
+      })
+    }
+  })
+  return Promise.resolve()
+}
+</script>
+
 <template>
   <view class="goods-detail">
     <pc-empty-status />
@@ -7,11 +132,6 @@
         <image src="/static/icons/back.png" mode="aspectFit" class="back-icon" />
       </view>
       <view class="right-actions">
-        <view class="favorite-btn" @click="onClickFavorite">
-          <image :src="isFavoriteRef ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
-            mode="aspectFit" class="action-icon" />
-          <text class="favorite-count">{{ favoriteCountRef }}</text>
-        </view>
         <view class="share-btn" @click="onClickShare">
           <image src="/static/icons/share.png" mode="aspectFit" class="action-icon" />
         </view>
@@ -32,36 +152,26 @@
 
       <!-- 商品信息 -->
       <view class="goods-info">
-        <text class="goods-name">{{ goodsRef.name }}</text>
+        <text class="goods-name">{{ goodsRef?.name }}</text>
         <view class="price-tag">
-          <text class="price">¥{{ goodsRef.price }}</text>
-          <text class="tag">{{ goodsRef.tag }}</text>
+          <text class="price">¥{{ goodsRef?.price }}</text>
+          <text class="tag">{{ goodsRef?.categoryRef?.name }}</text>
         </view>
       </view>
 
       <!-- 商品描述 -->
       <view class="goods-desc">
-        <text class="desc-text">{{ goodsRef.description }}</text>
-      </view>
-
-      <!-- 交易信息 -->
-      <view class="trade-info">
-        <view class="trade-item">
-          <text class="trade-label">交易方式</text>
-          <text class="trade-value">{{ goodsRef.tradeType }}</text>
-        </view>
-        <view class="trade-item">
-          <text class="trade-label">所在位置</text>
-          <text class="trade-value">{{ goodsRef.location }}</text>
-        </view>
+        <view class="section-title">商品描述</view>
+        <text class="desc-text">{{ goodsRef?.description }}</text>
       </view>
 
       <!-- 相似物品 -->
-      <view class="similar-goods">
-        <text class="section-title">相似的物品</text>
+      <view v-if="similarGoodsRef.length > 0" class="similar-goods">
+        <view class="section-title">相似的物品</view>
         <scroll-view class="similar-list" scroll-x="true">
-          <view v-for="item in similarGoodsRef" :key="item.id" class="similar-item" @click="onClickSimilarGoods(item)">
-            <image :src="item.image" mode="aspectFill" class="similar-image" />
+          <view v-for="item in similarGoodsRef" :key="item.objectId" class="similar-item"
+            @click="onClickSimilarGoods(item)">
+            <image :src="item.images[0]" mode="aspectFill" class="similar-image" />
             <view class="similar-info">
               <text class="similar-name">{{ item.name }}</text>
               <text class="similar-price">¥{{ item.price }}</text>
@@ -73,101 +183,10 @@
 
     <!-- 底部操作栏 -->
     <view class="bottom-actions">
-      <button class="chat-btn" @click="onClickChat">聊一聊</button>
-      <button class="offer-btn" @click="onClickOffer">出价</button>
+      <button class="chat-btn full-width" @click="onClickChat">聊一聊</button>
     </view>
   </view>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
-
-// 页面数据
-const currentSwiperRef = ref(0)
-const isFavoriteRef = ref(false)
-const favoriteCountRef = ref(32)
-
-// Mock数据
-const imagesRef = ref([
-  '/static/temp/goods.png',
-  '/static/temp/goods.png',
-  '/static/temp/goods.png'
-])
-
-const goodsRef = ref({
-  name: '初音未来手办 日本制万代正版 2019年 个人收藏绝版',
-  price: 50,
-  tag: '全新',
-  description: '这款赛博朋克小姐，以现实未来情怀重塑，特别定制。日常小姐是绝对正版商品，都能影响不大不过品味，为生活添一件独特收藏。',
-  tradeType: '面交',
-  location: '杭州西湖区龙坞地铁站'
-})
-
-const similarGoodsRef = ref([
-  {
-    id: 1,
-    name: '19世纪中古壁灯',
-    price: 600,
-    image: '/static/temp/goods.png'
-  },
-  {
-    id: 2,
-    name: '古董相机',
-    price: 600,
-    image: '/static/temp/goods.png'
-  }
-])
-
-// 事件处理
-function onClickBack() {
-  uni.navigateBack()
-  return Promise.resolve()
-}
-
-function onClickFavorite() {
-  isFavoriteRef.value = !isFavoriteRef.value
-  favoriteCountRef.value += isFavoriteRef.value ? 1 : -1
-  return Promise.resolve()
-}
-
-function onClickShare() {
-  uni.showShareMenu({
-    withShareTicket: true
-  })
-  return Promise.resolve()
-}
-
-function onSwiperChange(e) {
-  currentSwiperRef.value = e.detail.current
-  return Promise.resolve()
-}
-
-function onPreviewImage(index) {
-  uni.previewImage({
-    current: index,
-    urls: imagesRef.value
-  })
-  return Promise.resolve()
-}
-
-function onClickSimilarGoods(goods) {
-  uni.navigateTo({
-    url: `/pages/goods/goods-detail?id=${goods.id}`
-  })
-  return Promise.resolve()
-}
-
-function onClickChat() {
-  console.log('点击聊一聊')
-  return Promise.resolve()
-}
-
-function onClickOffer() {
-  console.log('点击出价')
-  return Promise.resolve()
-}
-</script>
 
 <style>
 .goods-detail {
@@ -222,7 +241,7 @@ function onClickOffer() {
 .content-area {
   position: relative;
   flex: 1;
-  margin-bottom: 120rpx;
+  margin-bottom: 240rpx;
 }
 
 .swiper {
@@ -252,7 +271,7 @@ function onClickOffer() {
 .goods-info {
   background: #fff;
   padding: 32rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .goods-name {
@@ -285,7 +304,7 @@ function onClickOffer() {
 .goods-desc {
   background: #fff;
   padding: 32rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .desc-text {
@@ -294,36 +313,10 @@ function onClickOffer() {
   line-height: 1.6;
 }
 
-.trade-info {
-  background: #fff;
-  padding: 32rpx;
-  margin-bottom: 20rpx;
-}
-
-.trade-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16rpx;
-}
-
-.trade-item:last-child {
-  margin-bottom: 0;
-}
-
-.trade-label {
-  font-size: 28rpx;
-  color: #999;
-  width: 140rpx;
-}
-
-.trade-value {
-  font-size: 28rpx;
-  color: #333;
-}
-
 .similar-goods {
   background: #fff;
   padding: 32rpx;
+  margin-bottom: 320rpx;
 }
 
 .section-title {
@@ -378,11 +371,11 @@ function onClickOffer() {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 128rpx;
+  bottom: 64rpx;
   height: 120rpx;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 0 32rpx;
 }
 
@@ -398,12 +391,11 @@ function onClickOffer() {
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
-.chat-btn {
-  background: #f5f5f5;
-  color: #333;
+.full-width {
+  width: 100%;
 }
 
-.offer-btn {
+.chat-btn {
   background: #07c160;
   color: #fff;
 }
