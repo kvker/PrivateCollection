@@ -131,7 +131,7 @@ const onClickItem = (item) => {
   console.log('点击商品:', item)
   // TODO: 实现商品详情跳转
   uni.navigateTo({
-    url: `/pages/goods/goods-detail?objectId=${item.objectId}`
+    url: `/pages/goods-detail/goods-detail?objectId=${item.objectId}`
   })
   return Promise.resolve()
 }

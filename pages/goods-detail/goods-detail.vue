@@ -79,7 +79,7 @@ function onClickShare() {
 onShareAppMessage(() => {
   return {
     title: '有友藏-' + goodsRef.value?.name,
-    path: `/pages/goods/goods-detail?objectId=${goodsRef.value?.objectId}`,
+    path: `/pages/goods-detail/goods-detail?objectId=${goodsRef.value?.objectId}`,
     imageUrl: imagesRef.value[0]
   }
 })
@@ -99,7 +99,7 @@ function onPreviewImage(index) {
 
 function onClickSimilarGoods(goods) {
   uni.navigateTo({
-    url: `/pages/goods/goods-detail?objectId=${goods.objectId}`
+    url: `/pages/goods-detail/goods-detail?objectId=${goods.objectId}`
   })
   return Promise.resolve()
 }
