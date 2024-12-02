@@ -280,6 +280,54 @@ async function onSubmitForm() {
 
   return Promise.resolve()
 }
+
+// 删除商品
+async function onDeleteGoods() {
+  try {
+    const { confirm } = await uni.showModal({
+      title: '提示',
+      content: '确定要删除这个商品吗？',
+      confirmText: '删除',
+      confirmColor: '#ff4d4f'
+    })
+    if(!confirm) return
+
+    uni.showLoading({ title: '删除中...' })
+
+    // 从 LeanCloud 删除
+    const goods = AV.Object.createWithoutData('Goods', goodsIdRef.value)
+    await goods.destroy()
+
+    uni.hideLoading()
+    uni.showToast({
+      title: '删除成功',
+      icon: 'success'
+    })
+
+    // 返回上一页并刷新
+    setTimeout(() => {
+      uni.navigateBack({
+        delta: 1,
+        success: () => {
+          const pages = getCurrentPages()
+          const listPage = pages[pages.length - 1]
+          if(listPage && listPage.$vm && listPage.$vm.onRefresh) {
+            listPage.$vm.onRefresh()
+          }
+        }
+      })
+    }, 1500)
+
+  } catch(error) {
+    uni.hideLoading()
+    console.error('删除商品失败:', error)
+    uni.showToast({
+      title: '删除失败:' + error.message,
+      icon: 'none'
+    })
+  }
+  return Promise.resolve()
+}
 </script>
 
 <template>
@@ -343,7 +391,12 @@ async function onSubmitForm() {
 
     <!-- 底部按钮 -->
     <view class="bottom-actions">
-      <button class="submit-btn" @click="onSubmitForm">{{ submitTextRef }}</button>
+      <view class="btn-group">
+        <button v-if="modeRef === 'edit'" class="delete-btn-bottom" @click="onDeleteGoods">删除</button>
+        <button class="submit-btn" :class="{ 'full-width': modeRef === 'add' }" @click="onSubmitForm">
+          {{ submitTextRef }}
+        </button>
+      </view>
     </view>
   </view>
 </template>
@@ -472,8 +525,25 @@ async function onSubmitForm() {
   padding: 0 32rpx;
 }
 
+.btn-group {
+  display: flex;
+  gap: 20rpx;
+}
+
+.delete-btn-bottom {
+  flex: 1;
+  height: 88rpx;
+  background: #ff4d4f;
+  border-radius: 44rpx;
+  color: #fff;
+  font-size: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .submit-btn {
-  width: 100%;
+  flex: 1;
   height: 88rpx;
   background: #07c160;
   border-radius: 44rpx;
@@ -482,6 +552,10 @@ async function onSubmitForm() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.full-width {
+  width: 100%;
 }
 
 .category-scroll {
