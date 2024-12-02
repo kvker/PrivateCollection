@@ -118,14 +118,6 @@ onLoad(async () => {
   }
 })
 
-// 点击分类
-function onClickCategory(category) {
-  uni.navigateTo({
-    url: `/pages/category/category?category=${category.name}`
-  })
-  return Promise.resolve()
-}
-
 // 点击商品
 const onClickItem = (item) => {
   console.log('点击商品:', item)
@@ -170,11 +162,14 @@ onShareAppMessage(() => {
       <!-- 分类导航 -->
       <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
         <view class="category-nav">
-          <view v-for="category in categoriesRef" :key="category.objectId" class="category-item"
-            @click="onClickCategory(category)">
+          <navigator v-for="category in categoriesRef"
+            :key="category.objectId"
+            class="category-item"
+            :url="`/pages/category/category?objectId=${category.objectId}`"
+          >
             <image :src="category.icon || '/static/icons/toy.png'" mode="aspectFit" class="category-icon"></image>
             <text class="category-name">{{ category.name }}</text>
-          </view>
+          </navigator>
         </view>
       </scroll-view>
 
