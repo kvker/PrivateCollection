@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { onLoad, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
+import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
 const AV = getApp().globalData.AV
@@ -16,15 +16,12 @@ const hasMoreRef = ref(true)
 // 查询商品列表
 async function queryGoodsList(page = 1) {
   const query = new AV.Query('Goods')
-  // 按创建时间倒序
   query.descending('createdAt')
-  // 分页
   query.limit(PAGE_SIZE)
   query.skip((page - 1) * PAGE_SIZE)
 
   const results = await query.find()
 
-  // 检查是否还有更多数据
   if(results.length < PAGE_SIZE) {
     hasMoreRef.value = false
   }
@@ -46,7 +43,8 @@ onLoad(async () => {
 })
 
 // 下拉刷新
-onPullDownRefresh(async () => {
+async function onRefresh() {
+  if(isRefreshingRef.value) return
   isRefreshingRef.value = true
   try {
     const goods = await queryGoodsList()
@@ -60,14 +58,13 @@ onPullDownRefresh(async () => {
       icon: 'none'
     })
   } finally {
-    uni.stopPullDownRefresh()
     isRefreshingRef.value = false
   }
   return Promise.resolve()
-})
+}
 
 // 上拉加载
-onReachBottom(async () => {
+async function onLoadMore() {
   if(!hasMoreRef.value) return Promise.resolve()
   if(isLoadingRef.value) return Promise.resolve()
 
@@ -89,7 +86,7 @@ onReachBottom(async () => {
     isLoadingRef.value = false
   }
   return Promise.resolve()
-})
+}
 
 // 删除商品
 async function onDeleteGoods({ objectId, name }) {
@@ -158,11 +155,21 @@ function onClickAdd() {
     </view>
 
     <!-- 商品列表 -->
-    <scroll-view class="goods-list" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
-      @refresherrefresh="onPullDownRefresh" @scrolltolower="onReachBottom">
+    <scroll-view
+      class="goods-list"
+      scroll-y="true"
+      refresher-enabled="true"
+      :refresher-triggered="isRefreshingRef"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="onLoadMore"
+    >
       <view class="goods-grid">
-        <view v-for="item in goodsListRef" :key="item.objectId" class="goods-card" @click="onClickGoods(item)"
-          @longpress="onDeleteGoods(item, item.name)">
+        <view v-for="item in goodsListRef"
+          :key="item.objectId"
+          class="goods-card"
+          @click="onClickGoods(item)"
+          @longpress="onDeleteGoods(item)"
+        >
           <image :src="item.images[0]" mode="aspectFill" class="goods-image" />
           <view class="goods-info">
             <text class="goods-name">{{ item.name }}</text>
@@ -170,10 +177,14 @@ function onClickAdd() {
           </view>
         </view>
       </view>
+
+      <!-- 加载状态 -->
       <view v-if="goodsListRef.length === 0" class="empty-tip">
         暂无商品数据
       </view>
-      <view v-if="isLoadingRef" class="loading">加载中...</view>
+      <view v-if="isLoadingRef" class="loading">
+        加载中...
+      </view>
       <view v-if="!isLoadingRef && !hasMoreRef" class="no-more">
         没有更多数据了
       </view>
@@ -191,7 +202,6 @@ function onClickAdd() {
 }
 
 .nav-header {
-  margin-top: 88rpx;
   padding: 32rpx;
   display: flex;
   align-items: center;
