@@ -23,7 +23,7 @@ async function queryGoodsList(page = 1) {
   const results = await query.find()
 
   if(results.length < PAGE_SIZE) {
-    hasMoreRef.value = false
+    hasMoreRef.value = results.length === PAGE_SIZE
   }
 
   return results.map(item => item.toJSON())
@@ -51,7 +51,7 @@ async function onRefresh() {
     const goods = await queryGoodsList()
     goodsListRef.value = goods
     pageRef.value = 1
-    hasMoreRef.value = true
+    hasMoreRef.value = goods.length === PAGE_SIZE
   } catch(error) {
     console.error('刷新商品列表失败:', error)
     uni.showToast({
