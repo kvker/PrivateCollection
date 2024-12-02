@@ -16,6 +16,12 @@ const isLoadingRef = ref(false)
 const pageRef = ref(1)
 const hasMoreRef = ref(true)
 const searchKeywordRef = ref('')
+const isAdminRef = ref(false)
+
+AV.User.current()?.getRoles().then(roleLcObjectList => {
+  const adminRole = roleLcObjectList.find(i => i.get('name').toLowerCase().includes('admin'))
+  isAdminRef.value = !!adminRole
+})
 
 // 查询分类列表
 async function queryCategoryList() {
@@ -128,14 +134,6 @@ const onClickItem = (item) => {
   return Promise.resolve()
 }
 
-// TODO: 添加管理员权限判断条件
-function onClickAdmin() {
-  uni.navigateTo({
-    url: '/pages/admin/list/list'
-  })
-  return Promise.resolve()
-}
-
 // 分享给朋友
 onShareAppMessage(() => {
   // 使用列表第一项的第一张图片
@@ -162,11 +160,8 @@ onShareAppMessage(() => {
       <!-- 分类导航 -->
       <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
         <view class="category-nav">
-          <navigator v-for="category in categoriesRef"
-            :key="category.objectId"
-            class="category-item"
-            :url="`/pages/category/category?objectId=${category.objectId}`"
-          >
+          <navigator v-for="category in categoriesRef" :key="category.objectId" class="category-item"
+            :url="`/pages/category/category?objectId=${category.objectId}`">
             <image :src="category.icon || '/static/icons/toy.png'" mode="aspectFit" class="category-icon"></image>
             <text class="category-name">{{ category.name }}</text>
           </navigator>
@@ -197,9 +192,9 @@ onShareAppMessage(() => {
     </view>
 
     <!-- 管理入口 -->
-    <view v-if="true" class="admin-fab" @click="onClickAdmin">
+    <navigator v-if="isAdminRef" class="admin-fab" open-type="navigateTo" url="/pages/admin/list/list">
       <image src="/static/icons/add.png" mode="aspectFit" class="admin-icon" />
-    </view>
+    </navigator>
   </view>
 </template>
 
