@@ -98,24 +98,6 @@ function onClickSimilarGoods(goods) {
   })
   return Promise.resolve()
 }
-
-function onClickChat() {
-  uni.openCustomerServiceChat({
-    extInfo: { url: 'https://work.weixin.qq.com/kfid/xxx' }, // 替换为实际的客服URL
-    corpId: 'xxxx', // 替换为实际的企业ID
-    success(res) {
-      console.log('打开客服成功')
-    },
-    fail(err) {
-      console.error('打开客服失败:', err)
-      uni.showToast({
-        title: '打开客服失败',
-        icon: 'none'
-      })
-    }
-  })
-  return Promise.resolve()
-}
 </script>
 
 <template>
@@ -176,7 +158,7 @@ function onClickChat() {
 
     <!-- 底部操作栏 -->
     <view class="bottom-actions">
-      <button class="chat-btn full-width" @click="onClickChat">聊一聊</button>
+      <button class="chat-btn full-width" open-type="contact">找客服，聊一聊</button>
     </view>
   </view>
 </template>
