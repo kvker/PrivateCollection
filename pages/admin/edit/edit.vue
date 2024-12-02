@@ -56,7 +56,45 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
+
+const AV = getApp().globalData.AV
+
+onLoad(async ({ mode, objectId }) => {
+  console.log('onLoad', { mode, objectId })
+  modeRef.value = mode
+  if(objectId) {
+    goodsIdRef.value = objectId
+    try {
+      uni.showLoading({ title: '加载中...' })
+
+      // 查询商品详情
+      const query = new AV.Query('Goods')
+      const goods = await query.get(objectId)
+
+      // 设置表单数据
+      formRef.value = {
+        images: goods.get('images') || [],
+        name: goods.get('name'),
+        description: goods.get('description'),
+        price: goods.get('price')
+      }
+
+      uni.hideLoading()
+    } catch(error) {
+      console.error('加载商品详情失败:', error)
+      uni.showToast({
+        title: '加载失败:' + error.message,
+        icon: 'none'
+      })
+      // 加载失败返回上一页
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1500)
+    }
+  }
+})
 
 // 页面参数
 const modeRef = ref('add') // add, edit, view
@@ -84,26 +122,6 @@ const submitTextRef = computed(() => {
       return ''
   }
 })
-
-// Mock数据
-const mockGoods = {
-  id: 1,
-  name: '19世纪中古壁灯',
-  price: 600,
-  description: '这是一个古董壁灯',
-  images: ['/static/temp/goods.png']
-}
-
-// 页面加载
-function onLoad({ mode, id }) {
-  modeRef.value = mode
-  if(id) {
-    goodsIdRef.value = id
-    // Mock: 获取商品详情
-    formRef.value = { ...mockGoods }
-  }
-  return Promise.resolve()
-}
 
 // 选择图片
 function onChooseImage() {
@@ -167,7 +185,7 @@ function onPreviewImage({ index }) {
 }
 
 // 提交表单
-function onSubmitForm() {
+async function onSubmitForm() {
   if(!isEditableRef.value) return Promise.resolve()
 
   // 表单验证
@@ -179,17 +197,70 @@ function onSubmitForm() {
     uni.showToast({ title: '请输入商品名称', icon: 'none' })
     return Promise.resolve()
   }
+  if(!formRef.value.description) {
+    uni.showToast({ title: '请输入商品描述', icon: 'none' })
+    return Promise.resolve()
+  }
   if(!formRef.value.price) {
     uni.showToast({ title: '请输入商品价格', icon: 'none' })
     return Promise.resolve()
   }
 
-  // Mock: 提交表单
-  console.log('提交表单:', formRef.value)
-  uni.showToast({ title: '提交成功', icon: 'success' })
-  setTimeout(() => {
-    uni.navigateBack()
-  }, 1500)
+  try {
+    // 显示加载提示
+    uni.showLoading({ title: '提交中...' })
+
+    // 1. 先上传图片到LeanCloud
+    const imageFiles = await Promise.all(formRef.value.images.map(async (imagePath) => {
+      const file = new AV.File(`goods_${Date.now()}.png`, {
+        blob: {
+          uri: imagePath,
+        }
+      })
+      return file.save()
+    }))
+
+    // 2. 创建商品对象
+    const Goods = AV.Object.extend('Goods')
+    const goods = new Goods()
+
+    // 3. 设置商品属性
+    goods.set('name', formRef.value.name)
+    goods.set('description', formRef.value.description)
+    goods.set('price', Number(formRef.value.price))
+    goods.set('images', imageFiles.map(file => file.url()))
+
+    // 4. 保存商品
+    await goods.save()
+
+    // 5. 提示成功
+    uni.hideLoading()
+    uni.showToast({
+      title: '提交成功',
+      icon: 'success',
+      duration: 1500
+    })
+
+    // 6. 返回列表页并刷新
+    setTimeout(() => {
+      const pages = getCurrentPages()
+      const listPage = pages[pages.length - 2]
+      if(listPage && listPage.$vm) {
+        // 触发列表页的刷新方法
+        listPage.$vm.onPullDownRefresh()
+      }
+      uni.navigateBack()
+    }, 1500)
+
+  } catch(error) {
+    uni.hideLoading()
+    uni.showToast({
+      title: '提交失败：' + error.message,
+      icon: 'none',
+      duration: 2000
+    })
+    console.error('提交商品失败:', error)
+  }
 
   return Promise.resolve()
 }

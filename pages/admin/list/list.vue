@@ -3,38 +3,62 @@ import { ref } from 'vue'
 import { onLoad, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
+const AV = getApp().globalData.AV
+const PAGE_SIZE = 10
+
 // 页面数据
 const goodsListRef = ref([])
 const pageRef = ref(1)
 const isLoadingRef = ref(false)
 const isRefreshingRef = ref(false)
+const hasMoreRef = ref(true)
 
-// Mock数据
-const mockGoods = [
-  {
-    id: 1,
-    name: '19世纪中古壁灯',
-    price: 600,
-    image: '/static/temp/goods.png'
-  },
-  {
-    id: 2,
-    name: '古董大镜子 还能正常用的 适合装修',
-    price: 1200,
-    image: '/static/temp/goods.png'
+// 查询商品列表
+async function queryGoodsList(page = 1) {
+  const query = new AV.Query('Goods')
+  // 按创建时间倒序
+  query.descending('createdAt')
+  // 分页
+  query.limit(PAGE_SIZE)
+  query.skip((page - 1) * PAGE_SIZE)
+
+  const results = await query.find()
+
+  // 检查是否还有更多数据
+  if(results.length < PAGE_SIZE) {
+    hasMoreRef.value = false
   }
-]
 
-onLoad(() => {
-  goodsListRef.value = [...mockGoods]
+  return results.map(item => item.toJSON())
+}
+
+onLoad(async () => {
+  try {
+    const goods = await queryGoodsList()
+    goodsListRef.value = goods
+  } catch(error) {
+    console.error('加载商品列表失败:', error)
+    uni.showToast({
+      title: '加载失败:' + error.message,
+      icon: 'none'
+    })
+  }
 })
 
 // 下拉刷新
-onPullDownRefresh(() => {
+onPullDownRefresh(async () => {
   isRefreshingRef.value = true
   try {
-    goodsListRef.value = [...mockGoods]
+    const goods = await queryGoodsList()
+    goodsListRef.value = goods
     pageRef.value = 1
+    hasMoreRef.value = true
+  } catch(error) {
+    console.error('刷新商品列表失败:', error)
+    uni.showToast({
+      title: '刷新失败:' + error.message,
+      icon: 'none'
+    })
   } finally {
     uni.stopPullDownRefresh()
     isRefreshingRef.value = false
@@ -43,26 +67,71 @@ onPullDownRefresh(() => {
 })
 
 // 上拉加载
-onReachBottom(() => {
+onReachBottom(async () => {
+  if(!hasMoreRef.value) return Promise.resolve()
   if(isLoadingRef.value) return Promise.resolve()
+
   isLoadingRef.value = true
   try {
-    const newGoods = mockGoods.map(item => ({
-      ...item,
-      id: item.id + pageRef.value * mockGoods.length
-    }))
-    goodsListRef.value.push(...newGoods)
-    pageRef.value++
+    const nextPage = pageRef.value + 1
+    const newGoods = await queryGoodsList(nextPage)
+    if(newGoods.length > 0) {
+      goodsListRef.value.push(...newGoods)
+      pageRef.value = nextPage
+    }
+  } catch(error) {
+    console.error('加载更多商品失败:', error)
+    uni.showToast({
+      title: '加载失败:' + error.message,
+      icon: 'none'
+    })
   } finally {
     isLoadingRef.value = false
   }
   return Promise.resolve()
 })
 
+// 删除商品
+async function onDeleteGoods({ objectId, name }) {
+  try {
+    const { confirm } = await uni.showModal({
+      title: '提示',
+      content: `确定要删除 ${name} 这个商品吗？`,
+      confirmText: '删除',
+      confirmColor: '#ff4d4f'
+    })
+    if(!confirm) return
+
+    uni.showLoading({ title: '删除中...' })
+
+    // 从 LeanCloud 删除
+    const goods = AV.Object.createWithoutData('Goods', objectId)
+    await goods.destroy()
+
+    // 从列表中移除
+    goodsListRef.value = goodsListRef.value.filter(item => item.objectId !== objectId)
+
+    uni.hideLoading()
+    uni.showToast({
+      title: '删除成功',
+      icon: 'success'
+    })
+  } catch(error) {
+    if(error.errMsg?.includes('cancel')) return
+
+    console.error('删除商品失败:', error)
+    uni.showToast({
+      title: '删除失败:' + error.message,
+      icon: 'none'
+    })
+  }
+  return Promise.resolve()
+}
+
 // 点击商品
-function onClickGoods({ id }) {
+function onClickGoods({ objectId }) {
   uni.navigateTo({
-    url: `/pages/admin/edit/edit?id=${id}&mode=view`
+    url: `/pages/admin/edit/edit?objectId=${objectId}&mode=view`
   })
   return Promise.resolve()
 }
@@ -92,15 +161,22 @@ function onClickAdd() {
     <scroll-view class="goods-list" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
       @refresherrefresh="onPullDownRefresh" @scrolltolower="onReachBottom">
       <view class="goods-grid">
-        <view v-for="item in goodsListRef" :key="item.id" class="goods-card" @click="onClickGoods(item)">
-          <image :src="item.image" mode="aspectFill" class="goods-image" />
+        <view v-for="item in goodsListRef" :key="item.objectId" class="goods-card" @click="onClickGoods(item)"
+          @longpress="onDeleteGoods(item, item.name)">
+          <image :src="item.images[0]" mode="aspectFill" class="goods-image" />
           <view class="goods-info">
             <text class="goods-name">{{ item.name }}</text>
             <text class="goods-price">¥{{ item.price }}</text>
           </view>
         </view>
       </view>
+      <view v-if="goodsListRef.length === 0" class="empty-tip">
+        暂无商品数据
+      </view>
       <view v-if="isLoadingRef" class="loading">加载中...</view>
+      <view v-if="!isLoadingRef && !hasMoreRef" class="no-more">
+        没有更多数据了
+      </view>
     </scroll-view>
   </view>
 </template>
@@ -186,5 +262,19 @@ function onClickAdd() {
   padding: 20rpx;
   color: #999;
   font-size: 24rpx;
+}
+
+.no-more {
+  text-align: center;
+  padding: 20rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.empty-tip {
+  text-align: center;
+  padding: 40rpx;
+  color: #999;
+  font-size: 28rpx;
 }
 </style>
