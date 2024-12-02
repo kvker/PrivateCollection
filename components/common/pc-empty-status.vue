@@ -16,11 +16,8 @@ const props = defineProps({
   }
 })
 
-const statusBarHeight = ref('44px')
-
 onMounted(() => {
-  // 获取系统状态栏高度
-  uni.getSystemInfoSync().statusBarHeight
+
 })
 </script>
 

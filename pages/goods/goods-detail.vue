@@ -1,16 +1,18 @@
 <template>
   <view class="goods-detail">
-    <!-- 状态栏 -->
-    <pc-status></pc-status>
-
+    <pc-empty-status />
+    <!-- 顶部导航 -->
     <view class="nav-header">
       <view class="back-btn" @click="onClickBack">
         <image src="/static/icons/back.png" mode="aspectFit" class="back-icon" />
       </view>
       <view class="right-actions">
         <view class="favorite-btn" @click="onClickFavorite">
-          <image :src="isFavoriteRef ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
-            mode="aspectFit" class="action-icon" />
+          <image
+            :src="isFavoriteRef ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
+            mode="aspectFit"
+            class="action-icon"
+          />
           <text class="favorite-count">{{ favoriteCountRef }}</text>
         </view>
         <view class="share-btn" @click="onClickShare">
@@ -22,14 +24,19 @@
     <!-- 内容区域 -->
     <scroll-view class="content-area" scroll-y="true">
       <!-- 轮播图 -->
-      <swiper class="swiper" circular :current="currentSwiperRef" @change="onSwiperChange" :indicator-dots="true">
-        <swiper-item v-for="(image, index) in imagesRef" :key="index">
+      <swiper
+        class="swiper"
+        circular
+        :current="currentSwiperRef"
+        @change="onSwiperChange"
+      >
+        <swiper-item v-for="(image, index) in imagesRef" :key="index" @click="onPreviewImage(index)">
           <image :src="image" mode="aspectFill" class="swiper-image" />
         </swiper-item>
+        <view class="swiper-indicator">
+          <text class="indicator-text">{{ currentSwiperRef + 1 }}/{{ imagesRef.length }}</text>
+        </view>
       </swiper>
-      <view class="swiper-indicator">
-        <text class="indicator-text">{{ currentSwiperRef + 1 }}/{{ imagesRef.length }}</text>
-      </view>
 
       <!-- 商品信息 -->
       <view class="goods-info">
@@ -57,46 +64,21 @@
         </view>
       </view>
 
-      <!-- 卖家信息 -->
-      <view class="seller-info">
-        <image :src="goodsRef.sellerAvatar" mode="aspectFill" class="seller-avatar" />
-        <view class="seller-detail">
-          <text class="seller-name">{{ goodsRef.sellerName }}</text>
-          <view class="seller-rating">
-            <text class="rating-score">{{ goodsRef.sellerRating }}</text>
-            <text class="rating-count">({{ goodsRef.ratingCount }})</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 评论列表 -->
-      <view class="comments-section">
-        <view class="section-header" @click="onToggleComments">
-          <text class="section-title">查看全部评论</text>
-          <text class="toggle-icon">{{ isCommentsExpandedRef ? '↑' : '↓' }}</text>
-        </view>
-        <view v-if="isCommentsExpandedRef" class="comments-list">
-          <view v-for="comment in commentsRef" :key="comment.id" class="comment-item">
-            <image :src="comment.userAvatar" mode="aspectFill" class="comment-avatar" />
-            <view class="comment-content">
-              <view class="comment-header">
-                <text class="comment-name">{{ comment.userName }}</text>
-                <text class="comment-rating">{{ comment.rating }}分</text>
-              </view>
-              <text class="comment-text">{{ comment.content }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
       <!-- 相似物品 -->
       <view class="similar-goods">
         <text class="section-title">相似的物品</text>
         <scroll-view class="similar-list" scroll-x="true">
-          <view v-for="item in similarGoodsRef" :key="item.id" class="similar-item" @click="onClickSimilarGoods(item)">
+          <view
+            v-for="item in similarGoodsRef"
+            :key="item.id"
+            class="similar-item"
+            @click="onClickSimilarGoods(item)"
+          >
             <image :src="item.image" mode="aspectFill" class="similar-image" />
-            <text class="similar-name">{{ item.name }}</text>
-            <text class="similar-price">¥{{ item.price }}</text>
+            <view class="similar-info">
+              <text class="similar-name">{{ item.name }}</text>
+              <text class="similar-price">¥{{ item.price }}</text>
+            </view>
           </view>
         </scroll-view>
       </view>
@@ -112,13 +94,12 @@
 
 <script setup>
 import { ref } from 'vue'
-import PcStatus from '@/components/common/pc-status.vue'
+import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
 // 页面数据
 const currentSwiperRef = ref(0)
 const isFavoriteRef = ref(false)
 const favoriteCountRef = ref(32)
-const isCommentsExpandedRef = ref(false)
 
 // Mock数据
 const imagesRef = ref([
@@ -133,29 +114,8 @@ const goodsRef = ref({
   tag: '全新',
   description: '这款赛博朋克小姐，以现实未来情怀重塑，特别定制。日常小姐是绝对正版商品，都能影响不大不过品味，为生活添一件独特收藏。',
   tradeType: '面交',
-  location: '杭州西湖区龙坞地铁站',
-  sellerAvatar: '/static/temp/avatar.png',
-  sellerName: '大白是护镜',
-  sellerRating: 5.0,
-  ratingCount: 12
+  location: '杭州西湖区龙坞地铁站'
 })
-
-const commentsRef = ref([
-  {
-    id: 1,
-    userName: '会飞的鱼',
-    userAvatar: '/static/temp/avatar.png',
-    rating: 5.0,
-    content: '卖家很专业，很耐心'
-  },
-  {
-    id: 2,
-    userName: 'annana',
-    userAvatar: '/static/temp/avatar.png',
-    rating: 5.0,
-    content: '很好的卖家'
-  }
-])
 
 const similarGoodsRef = ref([
   {
@@ -196,8 +156,11 @@ function onSwiperChange(e) {
   return Promise.resolve()
 }
 
-function onToggleComments() {
-  isCommentsExpandedRef.value = !isCommentsExpandedRef.value
+function onPreviewImage(index) {
+  uni.previewImage({
+    current: index,
+    urls: imagesRef.value
+  })
   return Promise.resolve()
 }
 
@@ -229,7 +192,7 @@ function onClickOffer() {
 }
 
 .nav-header {
-  height: 88rpx;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -252,8 +215,7 @@ function onClickOffer() {
   gap: 32rpx;
 }
 
-.favorite-btn,
-.share-btn {
+.favorite-btn, .share-btn {
   display: flex;
   align-items: center;
 }
@@ -272,12 +234,12 @@ function onClickOffer() {
 .content-area {
   flex: 1;
   margin-bottom: 120rpx;
-  position: relative;
 }
 
 .swiper {
   width: 100%;
   height: 750rpx;
+  position: relative;
 }
 
 .swiper-image {
@@ -288,7 +250,7 @@ function onClickOffer() {
 .swiper-indicator {
   position: absolute;
   right: 32rpx;
-  top: 680rpx;
+  bottom: 32rpx;
   background: rgba(0, 0, 0, 0.5);
   padding: 8rpx 16rpx;
   border-radius: 32rpx;
@@ -371,125 +333,19 @@ function onClickOffer() {
   color: #333;
 }
 
-.seller-info {
+.similar-goods {
   background: #fff;
   padding: 32rpx;
-  margin-bottom: 20rpx;
-  display: flex;
-  align-items: center;
-}
-
-.seller-avatar {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 48rpx;
-  margin-right: 24rpx;
-}
-
-.seller-detail {
-  flex: 1;
-}
-
-.seller-name {
-  font-size: 32rpx;
-  color: #333;
-  margin-bottom: 8rpx;
-}
-
-.seller-rating {
-  display: flex;
-  align-items: center;
-}
-
-.rating-score {
-  font-size: 28rpx;
-  color: #333;
-}
-
-.rating-count {
-  font-size: 24rpx;
-  color: #999;
-  margin-left: 8rpx;
-}
-
-.comments-section {
-  background: #fff;
-  padding: 32rpx;
-  margin-bottom: 20rpx;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24rpx;
 }
 
 .section-title {
   font-size: 32rpx;
   color: #333;
   font-weight: bold;
-}
-
-.toggle-icon {
-  font-size: 32rpx;
-  color: #999;
-}
-
-.comments-list {
-  margin-top: 24rpx;
-}
-
-.comment-item {
-  display: flex;
   margin-bottom: 24rpx;
 }
 
-.comment-item:last-child {
-  margin-bottom: 0;
-}
-
-.comment-avatar {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 32rpx;
-  margin-right: 16rpx;
-}
-
-.comment-content {
-  flex: 1;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8rpx;
-}
-
-.comment-name {
-  font-size: 28rpx;
-  color: #333;
-  margin-right: 16rpx;
-}
-
-.comment-rating {
-  font-size: 24rpx;
-  color: #ff4444;
-}
-
-.comment-text {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.6;
-}
-
-.similar-goods {
-  background: #fff;
-  padding: 32rpx;
-}
-
 .similar-list {
-  margin-top: 24rpx;
   white-space: nowrap;
 }
 
@@ -510,6 +366,10 @@ function onClickOffer() {
   margin-bottom: 12rpx;
 }
 
+.similar-info {
+  padding: 0 8rpx;
+}
+
 .similar-name {
   font-size: 28rpx;
   color: #333;
@@ -517,6 +377,7 @@ function onClickOffer() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: block;
 }
 
 .similar-price {
@@ -537,8 +398,7 @@ function onClickOffer() {
   padding: 0 32rpx;
 }
 
-.chat-btn,
-.offer-btn {
+.chat-btn, .offer-btn {
   width: 320rpx;
   height: 80rpx;
   border-radius: 40rpx;

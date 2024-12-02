@@ -1,101 +1,52 @@
 <script setup>
-import { ref } from 'vue'
-import PcStatus from '@/components/common/pc-status.vue'
+import {
+  ref
+} from 'vue'
+import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
 // 分类数据
-const categoriesRef = ref([
-  { id: 1, name: '家居', icon: '/static/icons/home.png' },
-  { id: 2, name: '手作', icon: '/static/icons/handmade.png' },
-  { id: 3, name: 'ACG', icon: '/static/icons/acg.png' },
-  { id: 4, name: '数码', icon: '/static/icons/digital.png' },
-  { id: 5, name: '潮玩', icon: '/static/icons/toy.png' },
-  { id: 6, name: '古玩', icon: '/static/icons/antique.png' },
-  { id: 7, name: '收藏', icon: '/static/icons/collection.png' },
-  { id: 8, name: '其他', icon: '/static/icons/other.png' }
+const categoriesRef = ref([{
+  id: 1,
+  name: '家居',
+  icon: '/static/icons/home.png'
+},
+{
+  id: 2,
+  name: '手作',
+  icon: '/static/icons/handmade.png'
+},
+{
+  id: 3,
+  name: 'ACG',
+  icon: '/static/icons/acg.png'
+},
+{
+  id: 4,
+  name: '数码',
+  icon: '/static/icons/digital.png'
+},
+{
+  id: 5,
+  name: '潮玩',
+  icon: '/static/icons/toy.png'
+}
 ])
 
 // 最近好物数据
-const mockItems = [
-  {
-    id: 1,
-    userName: '一只大白',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '2天前在线',
-    name: '19世纪中古壁灯',
-    price: 600,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 2,
-    userName: '是个溜溜',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '10天前在线',
-    name: '古董大镜子 还能正常用的 适合装修',
-    price: 1200,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 3,
-    userName: '淘淘淘乐',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '3小时前在线',
-    name: '老式座钟 八音盒 可正常使用',
-    price: 3600,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 4,
-    userName: '李沐沐',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '刚刚在线',
-    name: '民国老茶几 纯实木',
-    price: 2800,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 3,
-    userName: '淘淘淘乐',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '3小时前在线',
-    name: '老式座钟 八音盒 可正常使用',
-    price: 3600,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 4,
-    userName: '李沐沐',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '刚刚在线',
-    name: '民国老茶几 纯实木',
-    price: 2800,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 3,
-    userName: '淘淘淘乐',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '3小时前在线',
-    name: '老式座钟 八音盒 可正常使用',
-    price: 3600,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 4,
-    userName: '李沐沐',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '刚刚在线',
-    name: '民国老茶几 纯实木',
-    price: 2800,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  }
+const mockItems = [{
+  id: 1,
+  name: '19世纪中古壁灯',
+  price: 600,
+  image: '/static/temp/goods.png',
+  isFavorite: false
+},
+{
+  id: 2,
+  name: '古董大镜子 还能正常用的 适合装修',
+  price: 1200,
+  image: '/static/temp/goods.png',
+  isFavorite: false
+}
 ]
 
 const recentItemsRef = ref([...mockItems])
@@ -155,7 +106,9 @@ const onClickItem = (item) => {
 }
 
 // 添加收藏点击事件
-function onClickFavorite({ id }) {
+function onClickFavorite({
+  id
+}) {
   const item = recentItemsRef.value.find(item => item.id === id)
   if(item) {
     item.isFavorite = !item.isFavorite
@@ -166,10 +119,7 @@ function onClickFavorite({ id }) {
 
 <template>
   <view class="home-page">
-    <!-- 状态栏 -->
-    <pc-status>
-      <text class="status-title">私藏</text>
-    </pc-status>
+    <pc-empty-status></pc-empty-status>
 
     <!-- 内容区域 -->
     <view class="content-area">
@@ -201,15 +151,8 @@ function onClickFavorite({ id }) {
             </view>
             <image :src="item.image" mode="aspectFill" class="item-image"></image>
             <view class="item-info">
-              <view class="item-user">
-                <image :src="item.userAvatar" mode="aspectFill" class="user-avatar"></image>
-                <text class="user-name">{{ item.userName }}</text>
-                <text class="user-status">{{ item.userStatus }}</text>
-              </view>
-              <view class="item-detail">
-                <text class="item-name">{{ item.name }}</text>
-                <text class="item-price">¥{{ item.price }}</text>
-              </view>
+              <text class="item-name">{{ item.name }}</text>
+              <text class="item-price">¥{{ item.price }}</text>
             </view>
           </view>
         </view>
@@ -260,17 +203,17 @@ function onClickFavorite({ id }) {
 }
 
 .category-nav {
-  display: inline-flex;
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  margin-bottom: 30rpx;
 }
 
 .category-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 120rpx;
-  height: 120rpx;
-  aspect-ratio: 1;
-  flex-shrink: 0;
+  width: 140rpx;
 }
 
 .category-icon {

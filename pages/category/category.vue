@@ -1,7 +1,6 @@
 <template>
   <view class="category-page">
-    <!-- 状态栏 -->
-    <pc-status></pc-status>
+    <pc-empty-status />
 
     <!-- 搜索区域 -->
     <view class="search-area">
@@ -27,15 +26,8 @@
           </view>
           <image :src="item.image" mode="aspectFill" class="goods-image"></image>
           <view class="goods-info">
-            <view class="user-info">
-              <image :src="item.userAvatar" mode="aspectFill" class="user-avatar"></image>
-              <text class="user-name">{{ item.userName }}</text>
-              <text class="user-status">{{ item.userStatus }}</text>
-            </view>
-            <view class="goods-detail">
-              <text class="goods-name">{{ item.name }}</text>
-              <text class="goods-price">¥{{ item.price }}</text>
-            </view>
+            <text class="goods-name">{{ item.name }}</text>
+            <text class="goods-price">¥{{ item.price }}</text>
           </view>
         </view>
       </view>
@@ -46,7 +38,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import PcStatus from '@/components/common/pc-status.vue'
+import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
 // 页面参数
 const categoryNameRef = ref('')
@@ -59,9 +51,6 @@ const pageRef = ref(1)
 const mockGoods = [
   {
     id: 1,
-    userName: '一只大白',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '2天前在线',
     name: '19世纪中古壁灯',
     price: 600,
     image: '/static/temp/goods.png',
@@ -69,9 +58,6 @@ const mockGoods = [
   },
   {
     id: 2,
-    userName: '是个溜溜',
-    userAvatar: '/static/temp/avatar.png',
-    userStatus: '10天前在线',
     name: '古董大镜子 还能正常用的 适合装修',
     price: 1200,
     image: '/static/temp/goods.png',
@@ -244,36 +230,6 @@ function onClickFavorite({ id }) {
 
 .goods-info {
   padding: 20rpx;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16rpx;
-}
-
-.user-avatar {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 24rpx;
-  margin-right: 12rpx;
-}
-
-.user-name {
-  font-size: 24rpx;
-  color: #333;
-  margin-right: 12rpx;
-}
-
-.user-status {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.goods-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
 }
 
 .goods-name {
