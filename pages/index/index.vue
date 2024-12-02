@@ -23,7 +23,8 @@ const mockItems = [
     userStatus: '2天前在线',
     name: '19世纪中古壁灯',
     price: 600,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   },
   {
     id: 2,
@@ -32,7 +33,8 @@ const mockItems = [
     userStatus: '10天前在线',
     name: '古董大镜子 还能正常用的 适合装修',
     price: 1200,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   },
   {
     id: 3,
@@ -41,7 +43,8 @@ const mockItems = [
     userStatus: '3小时前在线',
     name: '老式座钟 八音盒 可正常使用',
     price: 3600,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   },
   {
     id: 4,
@@ -50,7 +53,8 @@ const mockItems = [
     userStatus: '刚刚在线',
     name: '民国老茶几 纯实木',
     price: 2800,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   },
   {
     id: 3,
@@ -59,7 +63,8 @@ const mockItems = [
     userStatus: '3小时前在线',
     name: '老式座钟 八音盒 可正常使用',
     price: 3600,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   },
   {
     id: 4,
@@ -68,7 +73,8 @@ const mockItems = [
     userStatus: '刚刚在线',
     name: '民国老茶几 纯实木',
     price: 2800,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   },
   {
     id: 3,
@@ -77,7 +83,8 @@ const mockItems = [
     userStatus: '3小时前在线',
     name: '老式座钟 八音盒 可正常使用',
     price: 3600,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   },
   {
     id: 4,
@@ -86,7 +93,8 @@ const mockItems = [
     userStatus: '刚刚在线',
     name: '民国老茶几 纯实木',
     price: 2800,
-    image: '/static/temp/goods.png'
+    image: '/static/temp/goods.png',
+    isFavorite: false
   }
 ]
 
@@ -129,9 +137,10 @@ const onLoadMore = async () => {
 }
 
 // 点击分类
-const onClickCategory = (category) => {
-  console.log('点击分类:', category)
-  // TODO: 实现分类跳转
+function onClickCategory(category) {
+  uni.navigateTo({
+    url: `/pages/category/category?category=${category.name}`
+  })
   return Promise.resolve()
 }
 
@@ -139,6 +148,15 @@ const onClickCategory = (category) => {
 const onClickItem = (item) => {
   console.log('点击商品:', item)
   // TODO: 实现商品详情跳转
+  return Promise.resolve()
+}
+
+// 添加收藏点击事件
+function onClickFavorite({ id }) {
+  const item = recentItemsRef.value.find(item => item.id === id)
+  if(item) {
+    item.isFavorite = !item.isFavorite
+  }
   return Promise.resolve()
 }
 </script>
@@ -174,15 +192,21 @@ const onClickItem = (item) => {
         <view class="section-title">最近好物</view>
         <view class="items-grid">
           <view v-for="item in recentItemsRef" :key="item.id" class="item-card" @click="onClickItem(item)">
-            <view class="item-user">
-              <image :src="item.userAvatar" mode="aspectFill" class="user-avatar"></image>
-              <text class="user-name">{{ item.userName }}</text>
-              <text class="user-status">{{ item.userStatus }}</text>
+            <view class="favorite-btn" @click.stop="onClickFavorite(item)">
+              <image :src="item.isFavorite ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
+                class="favorite-icon" mode="aspectFit" />
             </view>
             <image :src="item.image" mode="aspectFill" class="item-image"></image>
             <view class="item-info">
-              <text class="item-name">{{ item.name }}</text>
-              <text class="item-price">¥{{ item.price }}</text>
+              <view class="item-user">
+                <image :src="item.userAvatar" mode="aspectFill" class="user-avatar"></image>
+                <text class="user-name">{{ item.userName }}</text>
+                <text class="user-status">{{ item.userStatus }}</text>
+              </view>
+              <view class="item-detail">
+                <text class="item-name">{{ item.name }}</text>
+                <text class="item-price">¥{{ item.price }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -278,12 +302,13 @@ const onClickItem = (item) => {
   border-radius: 20rpx;
   overflow: hidden;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .item-user {
   display: flex;
   align-items: center;
-  padding: 20rpx;
+  padding: 20rpx 0;
 }
 
 .user-avatar {
@@ -316,12 +341,15 @@ const onClickItem = (item) => {
 .item-name {
   font-size: 28rpx;
   color: #333;
-  margin-bottom: 10rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .item-price {
   font-size: 32rpx;
-  color: #ff4444;
+  color: #333;
   font-weight: bold;
 }
 
@@ -330,5 +358,38 @@ const onClickItem = (item) => {
   padding: 20rpx;
   color: #999;
   font-size: 24rpx;
+}
+
+.favorite-btn {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  z-index: 10;
+}
+
+.favorite-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.item-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.item-name {
+  font-size: 28rpx;
+  color: #333;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.item-price {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: bold;
 }
 </style>
