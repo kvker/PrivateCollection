@@ -95,7 +95,8 @@ graph TD
 1. 克隆项目
 2. 使用 HBuilderX 打开项目
 3. 配置 LeanCloud 参数
-4. 微信小程序运行项目
+4. 配置你自己的微信小程序的 AppID
+5. 微信小程序运行项目
 
 ## License
 
