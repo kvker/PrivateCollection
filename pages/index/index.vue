@@ -1,67 +1,59 @@
 <script setup>
-import {
-  ref
-} from 'vue'
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
+const AV = getApp().globalData.AV
+const PAGE_SIZE = 10
+
 // 分类数据
-const categoriesRef = ref([{
-  id: 1,
-  name: '家居',
-  icon: '/static/icons/home.png'
-},
-{
-  id: 2,
-  name: '手作',
-  icon: '/static/icons/handmade.png'
-},
-{
-  id: 3,
-  name: 'ACG',
-  icon: '/static/icons/acg.png'
-},
-{
-  id: 4,
-  name: '数码',
-  icon: '/static/icons/digital.png'
-},
-{
-  id: 5,
-  name: '潮玩',
-  icon: '/static/icons/toy.png'
-}
-])
+const categoriesRef = ref([])
 
-// 最近好物数据
-const mockItems = [{
-  id: 1,
-  name: '19世纪中古壁灯',
-  price: 600,
-  image: '/static/temp/goods.png',
-  isFavorite: false
-},
-{
-  id: 2,
-  name: '古董大镜子 还能正常用的 适合装修',
-  price: 1200,
-  image: '/static/temp/goods.png',
-  isFavorite: false
-}
-]
-
-const recentItemsRef = ref([...mockItems])
+// 商品数据
+const recentItemsRef = ref([])
 const isRefreshingRef = ref(false)
 const isLoadingRef = ref(false)
 const pageRef = ref(1)
+const hasMoreRef = ref(true)
+const searchKeywordRef = ref('')
+
+// 查询分类列表
+async function queryCategoryList() {
+  const query = new AV.Query('Category')
+  query.ascending('sort')
+  const results = await query.find()
+  return results.map(item => item.toJSON())
+}
+
+// 查询商品列表
+async function queryGoodsList(page = 1, keyword = '') {
+  const query = new AV.Query('Goods')
+  query.descending('updatedAt')
+  query.limit(PAGE_SIZE)
+  query.skip((page - 1) * PAGE_SIZE)
+  // 如果有搜索关键词
+  if(keyword) {
+    query.contains('name', keyword)
+  }
+  // 包含分类信息
+  query.include('categoryRef')
+
+  const results = await query.find()
+  if(results.length < PAGE_SIZE) {
+    hasMoreRef.value = false
+  }
+
+  return results.map(item => item.toJSON())
+}
 
 // 下拉刷新
 const onRefresh = async () => {
   isRefreshingRef.value = true
   try {
-    // 模拟请求
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    recentItemsRef.value = [...mockItems]
+    const goods = await queryGoodsList(1, searchKeywordRef.value)
+    recentItemsRef.value = goods
     pageRef.value = 1
+    hasMoreRef.value = goods.length === PAGE_SIZE
   } finally {
     isRefreshingRef.value = false
   }
@@ -70,22 +62,61 @@ const onRefresh = async () => {
 
 // 上拉加载更多
 const onLoadMore = async () => {
+  if(!hasMoreRef.value) return Promise.resolve()
   if(isLoadingRef.value) return Promise.resolve()
   isLoadingRef.value = true
   try {
-    // 模拟请求
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    const newItems = mockItems.map(item => ({
-      ...item,
-      id: item.id + pageRef.value * 4
-    }))
-    recentItemsRef.value.push(...newItems)
-    pageRef.value++
+    const nextPage = pageRef.value + 1
+    const newGoods = await queryGoodsList(nextPage, searchKeywordRef.value)
+    if(newGoods.length > 0) {
+      recentItemsRef.value.push(...newGoods)
+      pageRef.value = nextPage
+    }
   } finally {
     isLoadingRef.value = false
   }
   return Promise.resolve()
 }
+
+// 搜索功能
+async function onSearch(e) {
+  const keyword = e.detail.value.trim()
+  searchKeywordRef.value = keyword
+  // 重置列表并查询
+  recentItemsRef.value = []
+  pageRef.value = 1
+  hasMoreRef.value = true
+  try {
+    const goods = await queryGoodsList(1, keyword)
+    recentItemsRef.value = goods
+  } catch(error) {
+    console.error('搜索商品失败:', error)
+    uni.showToast({
+      title: '搜索失败:' + error.message,
+      icon: 'none'
+    })
+  }
+  return Promise.resolve()
+}
+
+// 页面加载
+onLoad(async () => {
+  try {
+    // 1. 加载分类
+    const categories = await queryCategoryList()
+    categoriesRef.value = categories
+
+    // 2. 加载商品列表
+    const goods = await queryGoodsList()
+    recentItemsRef.value = goods
+  } catch(error) {
+    console.error('加载数据失败:', error)
+    uni.showToast({
+      title: '加载失败:' + error.message,
+      icon: 'none'
+    })
+  }
+})
 
 // 点击分类
 function onClickCategory(category) {
@@ -100,19 +131,8 @@ const onClickItem = (item) => {
   console.log('点击商品:', item)
   // TODO: 实现商品详情跳转
   uni.navigateTo({
-    url: `/pages/goods/goods-detail?id=${item.id}`
+    url: `/pages/goods/goods-detail?objectId=${item.objectId}`
   })
-  return Promise.resolve()
-}
-
-// 添加收藏点击事件
-function onClickFavorite({
-  id
-}) {
-  const item = recentItemsRef.value.find(item => item.id === id)
-  if(item) {
-    item.isFavorite = !item.isFavorite
-  }
   return Promise.resolve()
 }
 
@@ -133,39 +153,40 @@ function onClickAdmin() {
     <view class="content-area">
       <!-- 搜索框 -->
       <view class="search-box">
-        <input type="text" placeholder="搜索" />
+        <input type="text" placeholder="搜索商品名称" :value="searchKeywordRef" @confirm="onSearch" />
       </view>
 
-      <!-- 分类导航 - 横向滚动 -->
+      <!-- 分类导航 -->
       <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
         <view class="category-nav">
-          <view v-for="category in categoriesRef" :key="category.id" class="category-item"
+          <view v-for="category in categoriesRef" :key="category.objectId" class="category-item"
             @click="onClickCategory(category)">
-            <image :src="category.icon" mode="aspectFit" class="category-icon"></image>
+            <image :src="category.icon || '/static/icons/toy.png'" mode="aspectFit" class="category-icon"></image>
             <text class="category-name">{{ category.name }}</text>
           </view>
         </view>
       </scroll-view>
 
-      <!-- 最近好物 - 上下滚动 -->
+      <!-- 商品列表 -->
       <scroll-view class="recent-items" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
         @refresherrefresh="onRefresh" @scrolltolower="onLoadMore">
         <view class="section-title">最近好物</view>
         <view class="items-grid">
-          <view v-for="item in recentItemsRef" :key="item.id" class="item-card" @click="onClickItem(item)">
-            <!-- TODO 收藏功能 -->
-            <!-- <view class="favorite-btn" @click.stop="onClickFavorite(item)">
-              <image :src="item.isFavorite ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
-                class="favorite-icon" mode="aspectFit" />
-            </view> -->
-            <image :src="item.image" mode="aspectFill" class="item-image"></image>
+          <view v-for="item in recentItemsRef" :key="item.objectId" class="item-card" @click="onClickItem(item)">
+            <image :src="item.images[0]" mode="aspectFill" class="item-image"></image>
             <view class="item-info">
               <text class="item-name">{{ item.name }}</text>
               <text class="item-price">¥{{ item.price }}</text>
             </view>
           </view>
         </view>
+        <view v-if="recentItemsRef.length === 0" class="empty-tip">
+          暂无商品数据
+        </view>
         <view v-if="isLoadingRef" class="loading">加载中...</view>
+        <view v-if="!isLoadingRef && !hasMoreRef" class="no-more">
+          没有更多数据了
+        </view>
       </scroll-view>
     </view>
 
@@ -370,5 +391,19 @@ function onClickAdmin() {
 .admin-icon {
   width: 44rpx;
   height: 44rpx;
+}
+
+.empty-tip {
+  text-align: center;
+  padding: 40rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.no-more {
+  text-align: center;
+  padding: 20rpx;
+  color: #999;
+  font-size: 24rpx;
 }
 </style>
