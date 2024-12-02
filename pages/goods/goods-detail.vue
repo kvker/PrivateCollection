@@ -8,11 +8,8 @@
       </view>
       <view class="right-actions">
         <view class="favorite-btn" @click="onClickFavorite">
-          <image
-            :src="isFavoriteRef ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
-            mode="aspectFit"
-            class="action-icon"
-          />
+          <image :src="isFavoriteRef ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
+            mode="aspectFit" class="action-icon" />
           <text class="favorite-count">{{ favoriteCountRef }}</text>
         </view>
         <view class="share-btn" @click="onClickShare">
@@ -24,19 +21,14 @@
     <!-- 内容区域 -->
     <scroll-view class="content-area" scroll-y="true">
       <!-- 轮播图 -->
-      <swiper
-        class="swiper"
-        circular
-        :current="currentSwiperRef"
-        @change="onSwiperChange"
-      >
+      <swiper class="swiper" circular :current="currentSwiperRef" @change="onSwiperChange">
         <swiper-item v-for="(image, index) in imagesRef" :key="index" @click="onPreviewImage(index)">
           <image :src="image" mode="aspectFill" class="swiper-image" />
         </swiper-item>
-        <view class="swiper-indicator">
-          <text class="indicator-text">{{ currentSwiperRef + 1 }}/{{ imagesRef.length }}</text>
-        </view>
       </swiper>
+      <view class="swiper-indicator">
+        <text class="indicator-text">{{ currentSwiperRef + 1 }}/{{ imagesRef.length }}</text>
+      </view>
 
       <!-- 商品信息 -->
       <view class="goods-info">
@@ -68,12 +60,7 @@
       <view class="similar-goods">
         <text class="section-title">相似的物品</text>
         <scroll-view class="similar-list" scroll-x="true">
-          <view
-            v-for="item in similarGoodsRef"
-            :key="item.id"
-            class="similar-item"
-            @click="onClickSimilarGoods(item)"
-          >
+          <view v-for="item in similarGoodsRef" :key="item.id" class="similar-item" @click="onClickSimilarGoods(item)">
             <image :src="item.image" mode="aspectFill" class="similar-image" />
             <view class="similar-info">
               <text class="similar-name">{{ item.name }}</text>
@@ -215,7 +202,8 @@ function onClickOffer() {
   gap: 32rpx;
 }
 
-.favorite-btn, .share-btn {
+.favorite-btn,
+.share-btn {
   display: flex;
   align-items: center;
 }
@@ -232,6 +220,7 @@ function onClickOffer() {
 }
 
 .content-area {
+  position: relative;
   flex: 1;
   margin-bottom: 120rpx;
 }
@@ -239,7 +228,6 @@ function onClickOffer() {
 .swiper {
   width: 100%;
   height: 750rpx;
-  position: relative;
 }
 
 .swiper-image {
@@ -250,7 +238,7 @@ function onClickOffer() {
 .swiper-indicator {
   position: absolute;
   right: 32rpx;
-  bottom: 32rpx;
+  top: 680rpx;
   background: rgba(0, 0, 0, 0.5);
   padding: 8rpx 16rpx;
   border-radius: 32rpx;
@@ -398,7 +386,8 @@ function onClickOffer() {
   padding: 0 32rpx;
 }
 
-.chat-btn, .offer-btn {
+.chat-btn,
+.offer-btn {
   width: 320rpx;
   height: 80rpx;
   border-radius: 40rpx;

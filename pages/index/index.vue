@@ -228,7 +228,7 @@ function onClickFavorite({
 }
 
 .recent-items {
-  height: calc(100% - 248rpx);
+  height: calc(100% - 284rpx);
 }
 
 .section-title {
