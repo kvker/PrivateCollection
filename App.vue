@@ -1,7 +1,27 @@
 <script>
+const AV = require('./static/libs/av-core-min.js')
+// #ifdef MP-WEIXIN
+const adapters = require("./static/libs/leancloud-adapters-weapp.min.js")
+AV.setAdapters(adapters)
+// #endif
+
+AV.init({
+  appId: 'T3HBskk0nUnVWLCNZuuBwF42-gzGzoHsz',
+  appKey: 'RfVN029z18rpX2h1jeO4r5vA',
+  serverURL: 'https://t3hbskk0.lc-cn-n1-shared.com'
+})
+
 export default {
+  globalData: {
+    AV,
+  },
   onLaunch() {
     console.log('App Launch')
+    // #ifdef MP-WEIXIN
+    AV.User.loginWithWeapp().then(user => {
+      console.log(user)
+    }).catch(console.error)
+    // #endif
   },
   onShow() {
     console.log('App Show')
