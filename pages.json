@@ -14,14 +14,14 @@
     },
     {
       "path" : "pages/admin/list/list",
-      "style" : 
+      "style" :
       {
         "navigationBarTitleText" : ""
       }
     },
     {
       "path" : "pages/admin/edit/edit",
-      "style" : 
+      "style" :
       {
         "navigationBarTitleText" : ""
       }
@@ -29,7 +29,7 @@
   ],
   "globalStyle": {
     "navigationBarRightButton": {
-      "hide": true
+      // "hide": true
     },
     "navigationStyle": "custom",
     "navigationBarTextStyle": "black",

@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
 const AV = getApp().globalData.AV
@@ -143,6 +143,17 @@ function onClickAdmin() {
   })
   return Promise.resolve()
 }
+
+// 分享给朋友
+onShareAppMessage(() => {
+  // 使用列表第一项的第一张图片
+  const firstImage = recentItemsRef.value[0]?.images[0] || ''
+  return {
+    title: '有友藏-这里有神奇的好东西',
+    path: '/pages/index/index',
+    imageUrl: firstImage
+  }
+})
 </script>
 
 <template>
