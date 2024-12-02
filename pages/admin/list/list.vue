@@ -156,9 +156,7 @@ defineExpose({
     <view class="nav-header">
       <pc-back />
       <text class="nav-title">商品管理</text>
-      <view class="add-btn" @click="onClickAdd">
-        <text class="add-text">新增</text>
-      </view>
+      <view class="placeholder" style="width: 88rpx;"></view>
     </view>
 
     <!-- 商品列表 -->
@@ -186,6 +184,11 @@ defineExpose({
         没有更多数据了
       </view>
     </scroll-view>
+
+    <!-- 新增按钮 -->
+    <view class="add-fab" @click="onClickAdd">
+      <image src="/static/icons/add.png" mode="aspectFit" class="add-icon" />
+    </view>
   </view>
 </template>
 
@@ -209,17 +212,6 @@ defineExpose({
   font-size: 32rpx;
   font-weight: bold;
   color: #333;
-}
-
-.add-btn {
-  padding: 12rpx 32rpx;
-  background: #07c160;
-  border-radius: 32rpx;
-}
-
-.add-text {
-  font-size: 28rpx;
-  color: #fff;
 }
 
 .goods-list {
@@ -283,5 +275,24 @@ defineExpose({
   padding: 40rpx;
   color: #999;
   font-size: 28rpx;
+}
+
+.add-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: 128rpx;
+  width: 88rpx;
+  height: 88rpx;
+  background: #07c160;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+
+.add-icon {
+  width: 44rpx;
+  height: 44rpx;
 }
 </style>
