@@ -11,6 +11,20 @@
     {
       "path": "pages/goods/goods-detail",
       "style": {}
+    },
+    {
+      "path" : "pages/admin/list/list",
+      "style" : 
+      {
+        "navigationBarTitleText" : ""
+      }
+    },
+    {
+      "path" : "pages/admin/edit/edit",
+      "style" : 
+      {
+        "navigationBarTitleText" : ""
+      }
     }
   ],
   "globalStyle": {

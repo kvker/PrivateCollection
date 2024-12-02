@@ -115,11 +115,19 @@ function onClickFavorite({
   }
   return Promise.resolve()
 }
+
+// TODO: 添加管理员权限判断条件
+function onClickAdmin() {
+  uni.navigateTo({
+    url: '/pages/admin/list/list'
+  })
+  return Promise.resolve()
+}
 </script>
 
 <template>
   <view class="home-page">
-    <pc-empty-status></pc-empty-status>
+    <pc-empty-status />
 
     <!-- 内容区域 -->
     <view class="content-area">
@@ -158,6 +166,19 @@ function onClickFavorite({
         </view>
         <view v-if="isLoadingRef" class="loading">加载中...</view>
       </scroll-view>
+    </view>
+
+    <!-- 管理入口 -->
+    <view
+      v-if="true"
+      class="admin-fab"
+      @click="onClickAdmin"
+    >
+      <image
+        src="/static/icons/add.png"
+        mode="aspectFit"
+        class="admin-icon"
+      />
     </view>
   </view>
 </template>
@@ -337,5 +358,24 @@ function onClickFavorite({
   font-size: 32rpx;
   color: #333;
   font-weight: bold;
+}
+
+.admin-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: 128rpx;
+  width: 88rpx;
+  height: 88rpx;
+  background: #07c160;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+
+.admin-icon {
+  width: 44rpx;
+  height: 44rpx;
 }
 </style>
