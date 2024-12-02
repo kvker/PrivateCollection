@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
+import { onLoad, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 
 const AV = getApp().globalData.AV
@@ -124,6 +124,18 @@ onLoad(async () => {
   }
 })
 
+// 页面显示时刷新列表
+onShow(async () => {
+  try {
+    const goods = await queryGoodsList(1, searchKeywordRef.value)
+    recentItemsRef.value = goods
+    pageRef.value = 1
+    hasMoreRef.value = goods.length === PAGE_SIZE
+  } catch(error) {
+    console.error('刷新商品列表失败:', error)
+  }
+})
+
 // 点击商品
 const onClickItem = (item) => {
   console.log('点击商品:', item)
@@ -143,6 +155,11 @@ onShareAppMessage(() => {
     path: '/pages/index/index',
     imageUrl: firstImage
   }
+})
+
+// 为了让其他组件可以调用刷新方法
+defineExpose({
+  onRefresh
 })
 </script>
 
