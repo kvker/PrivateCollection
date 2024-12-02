@@ -1,124 +1,132 @@
-<template>
-  <view class="category-page">
-    <pc-empty-status />
-
-    <!-- 搜索区域 -->
-    <view class="search-area">
-      <view class="nav-header">
-        <view class="back-btn" @click="onClickBack">
-          <image src="/static/icons/back.png" class="back-icon" mode="aspectFit" />
-        </view>
-        <text class="category-title">{{ categoryNameRef }}</text>
-      </view>
-      <view class="search-box">
-        <input type="text" v-model="searchKeywordRef" placeholder="搜索" @confirm="onSearch" />
-      </view>
-    </view>
-
-    <!-- 商品列表 -->
-    <scroll-view class="goods-list" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
-      @refresherrefresh="onRefresh" @scrolltolower="onLoadMore">
-      <view class="goods-grid">
-        <view v-for="item in goodsListRef" :key="item.id" class="goods-card" @click="onClickGoods(item)">
-          <view class="favorite-btn" @click.stop="onClickFavorite(item)">
-            <image :src="item.isFavorite ? '/static/icons/collection-selected.png' : '/static/icons/collection.png'"
-              class="favorite-icon" mode="aspectFit"></image>
-          </view>
-          <image :src="item.image" mode="aspectFill" class="goods-image"></image>
-          <view class="goods-info">
-            <text class="goods-name">{{ item.name }}</text>
-            <text class="goods-price">¥{{ item.price }}</text>
-          </view>
-        </view>
-      </view>
-      <view v-if="isLoadingRef" class="loading">加载中...</view>
-    </scroll-view>
-  </view>
-</template>
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
+import PcBack from '@/components/common/pc-back.vue'
+
+const AV = getApp().globalData.AV
+const PAGE_SIZE = 10
 
 // 页面参数
 const categoryNameRef = ref('')
+const categoryRef = ref(null)
 const searchKeywordRef = ref('')
 const isRefreshingRef = ref(false)
 const isLoadingRef = ref(false)
 const pageRef = ref(1)
+const hasMoreRef = ref(true)
+const goodsListRef = ref([])
 
-// Mock商品数据
-const mockGoods = [
-  {
-    id: 1,
-    name: '19世纪中古壁灯',
-    price: 600,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  },
-  {
-    id: 2,
-    name: '古董大镜子 还能正常用的 适合装修',
-    price: 1200,
-    image: '/static/temp/goods.png',
-    isFavorite: false
-  }
-]
-
-const goodsListRef = ref([...mockGoods])
-
-// 页面加载
-onMounted(() => {
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const { category } = currentPage.options
-  categoryNameRef.value = decodeURIComponent(category) || '分类'
-})
-
-// 返回上一页
-function onClickBack() {
-  uni.navigateBack()
-  return Promise.resolve()
+// 查询分类信息
+async function queryCategoryDetail(objectId) {
+  const query = new AV.Query('Category')
+  const category = await query.get(objectId)
+  return category.toJSON()
 }
 
+// 查询商品列表
+async function queryGoodsList(page = 1, keyword = '') {
+  const query = new AV.Query('Goods')
+  // 按分类查询
+  const category = AV.Object.createWithoutData('Category', categoryRef.value.objectId)
+  query.equalTo('categoryRef', category)
+  // 如果有搜索关键词
+  if(keyword) {
+    query.contains('name', keyword)
+  }
+  query.descending('updatedAt')
+  query.limit(PAGE_SIZE)
+  query.skip((page - 1) * PAGE_SIZE)
+  query.include('categoryRef')
+
+  const results = await query.find()
+  if(results.length < PAGE_SIZE) {
+    hasMoreRef.value = false
+  }
+
+  return results.map(item => item.toJSON())
+}
+
+// 页面加载
+onLoad(async ({ objectId }) => {
+  try {
+    // 1. 获取分类信息
+    const category = await queryCategoryDetail(objectId)
+    categoryRef.value = category
+    categoryNameRef.value = category.name
+
+    // 2. 加载商品列表
+    const goods = await queryGoodsList()
+    goodsListRef.value = goods
+  } catch(error) {
+    console.error('加载商品列表失败:', error)
+    uni.showToast({
+      title: '加载失败:' + error.message,
+      icon: 'none'
+    })
+  }
+})
+
 // 搜索
-function onSearch() {
-  console.log('搜索关键词:', searchKeywordRef.value)
+async function onSearch(e) {
+  const keyword = e.detail.value.trim()
+  searchKeywordRef.value = keyword
+  // 重置列表并查询
+  goodsListRef.value = []
+  pageRef.value = 1
+  hasMoreRef.value = true
+  try {
+    const goods = await queryGoodsList(1, keyword)
+    goodsListRef.value = goods
+  } catch(error) {
+    console.error('搜索商品失败:', error)
+    uni.showToast({
+      title: '搜索失败:' + error.message,
+      icon: 'none'
+    })
+  }
   return Promise.resolve()
 }
 
 // 下拉刷新
-function onRefresh() {
+async function onRefresh() {
   isRefreshingRef.value = true
   try {
-    // 模拟请求
-    setTimeout(() => {
-      goodsListRef.value = [...mockGoods]
-      pageRef.value = 1
-      isRefreshingRef.value = false
-    }, 1000)
+    const goods = await queryGoodsList(1, searchKeywordRef.value)
+    goodsListRef.value = goods
+    pageRef.value = 1
+    hasMoreRef.value = goods.length === PAGE_SIZE
   } catch(error) {
+    console.error('刷新商品列表失败:', error)
+    uni.showToast({
+      title: '刷新失败:' + error.message,
+      icon: 'none'
+    })
+  } finally {
     isRefreshingRef.value = false
   }
   return Promise.resolve()
 }
 
 // 加载更多
-function onLoadMore() {
+async function onLoadMore() {
+  if(!hasMoreRef.value) return Promise.resolve()
   if(isLoadingRef.value) return Promise.resolve()
   isLoadingRef.value = true
   try {
-    // 模拟请求
-    setTimeout(() => {
-      const newGoods = mockGoods.map(item => ({
-        ...item,
-        id: item.id + pageRef.value * mockGoods.length
-      }))
+    const nextPage = pageRef.value + 1
+    const newGoods = await queryGoodsList(nextPage, searchKeywordRef.value)
+    if(newGoods.length > 0) {
       goodsListRef.value.push(...newGoods)
-      pageRef.value++
-      isLoadingRef.value = false
-    }, 1000)
+      pageRef.value = nextPage
+    }
   } catch(error) {
+    console.error('加载更多商品失败:', error)
+    uni.showToast({
+      title: '加载失败:' + error.message,
+      icon: 'none'
+    })
+  } finally {
     isLoadingRef.value = false
   }
   return Promise.resolve()
@@ -126,19 +134,50 @@ function onLoadMore() {
 
 // 点击商品
 function onClickGoods(goods) {
-  console.log('点击商品:', goods)
-  return Promise.resolve()
-}
-
-// 收藏商品
-function onClickFavorite({ id }) {
-  const item = goodsListRef.value.find(item => item.id === id)
-  if(item) {
-    item.isFavorite = !item.isFavorite
-  }
+  uni.navigateTo({
+    url: `/pages/goods-detail/goods-detail?objectId=${goods.objectId}`
+  })
   return Promise.resolve()
 }
 </script>
+
+<template>
+  <view class="category-page">
+    <pc-empty-status />
+
+    <!-- 搜索区域 -->
+    <view class="search-area">
+      <view class="nav-header">
+        <pc-back />
+        <text class="category-title">{{ categoryNameRef }}</text>
+      </view>
+      <view class="search-box">
+        <input type="text" v-model="searchKeywordRef" placeholder="搜索商品名称" @confirm="onSearch" />
+      </view>
+    </view>
+
+    <!-- 商品列表 -->
+    <scroll-view class="goods-list" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
+      @refresherrefresh="onRefresh" @scrolltolower="onLoadMore">
+      <view class="goods-grid">
+        <view v-for="item in goodsListRef" :key="item.objectId" class="goods-card" @click="onClickGoods(item)">
+          <image :src="item.images[0]" mode="aspectFill" class="goods-image"></image>
+          <view class="goods-info">
+            <text class="goods-name">{{ item.name }}</text>
+            <text class="goods-price">¥{{ item.price }}</text>
+          </view>
+        </view>
+      </view>
+      <view v-if="goodsListRef.length === 0" class="empty-tip">
+        暂无商品数据
+      </view>
+      <view v-if="isLoadingRef" class="loading">加载中...</view>
+      <view v-if="!isLoadingRef && !hasMoreRef" class="no-more">
+        没有更多数据了
+      </view>
+    </scroll-view>
+  </view>
+</template>
 
 <style>
 .category-page {
@@ -170,6 +209,10 @@ function onClickFavorite({ id }) {
   font-weight: bold;
   color: #333;
   margin-left: 16rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400rpx;
 }
 
 .search-area {
@@ -211,18 +254,6 @@ function onClickFavorite({ id }) {
   position: relative;
 }
 
-.favorite-btn {
-  position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  z-index: 10;
-}
-
-.favorite-icon {
-  width: 40rpx;
-  height: 40rpx;
-}
-
 .goods-image {
   width: 100%;
   height: 300rpx;
@@ -248,6 +279,20 @@ function onClickFavorite({ id }) {
 }
 
 .loading {
+  text-align: center;
+  padding: 20rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.empty-tip {
+  text-align: center;
+  padding: 40rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.no-more {
   text-align: center;
   padding: 20rpx;
   color: #999;
