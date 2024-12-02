@@ -78,13 +78,13 @@ graph TD
   Pages --> Index[index/index.vue<br/>首页]
   Pages --> Category[category/category.vue<br/>分类页]
   Pages --> GoodsDetail[goods-detail/goods-detail.vue<br/>商品详情页]
-  Pages --> Admin[admin]
+  Pages --> Admin[admin<br/>管理员页面]
 
   Admin --> List[list/list.vue<br/>商品管理列表]
   Admin --> Edit[edit/edit.vue<br/>商品编辑页]
 
   Components --> Common[common]
-  Common --> Empty[pc-empty-status.vue<br/>空状态组件]
+  Common --> Empty[pc-empty-status.vue<br/>空状态栏组件，自定义头部使用]
   Common --> Back[pc-back.vue<br/>返回按钮组件]
 
   Static --> Icons[icons<br/>图标资源]
