@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
+import PcBack from '@/components/common/pc-back.vue'
 
 const AV = getApp().globalData.AV
 
@@ -58,12 +59,6 @@ onLoad(async (options) => {
     }, 1500)
   }
 })
-
-// 事件处理
-function onClickBack() {
-  uni.navigateBack()
-  return Promise.resolve()
-}
 
 function onClickShare() {
   // 使用第一张图片作为分享图
@@ -128,9 +123,7 @@ function onClickChat() {
     <pc-empty-status />
     <!-- 顶部导航 -->
     <view class="nav-header">
-      <view class="back-btn" @click="onClickBack">
-        <image src="/static/icons/back.png" mode="aspectFit" class="back-icon" />
-      </view>
+      <pc-back />
       <view class="right-actions">
         <view class="share-btn" @click="onClickShare">
           <image src="/static/icons/share.png" mode="aspectFit" class="action-icon" />
@@ -203,16 +196,6 @@ function onClickChat() {
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-}
-
-.back-btn {
-  width: 48rpx;
-  height: 48rpx;
-}
-
-.back-icon {
-  width: 100%;
-  height: 100%;
 }
 
 .right-actions {

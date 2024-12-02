@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
+import PcBack from '@/components/common/pc-back.vue'
 
 const AV = getApp().globalData.AV
 const PAGE_SIZE = 10
@@ -153,6 +154,7 @@ defineExpose({
 
     <!-- 顶部导航 -->
     <view class="nav-header">
+      <pc-back />
       <text class="nav-title">商品管理</text>
       <view class="add-btn" @click="onClickAdd">
         <text class="add-text">新增</text>

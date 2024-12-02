@@ -1,75 +1,8 @@
-<template>
-  <view class="admin-edit">
-    <pc-empty-status />
-
-    <!-- 顶部导航 -->
-    <view class="nav-header">
-      <view class="back-btn" @click="onClickBack">
-        <image src="/static/icons/back.png" mode="aspectFit" class="back-icon" />
-      </view>
-      <text class="nav-title">{{ modeRef === 'add' ? '新增商品' : '编辑商品' }}</text>
-    </view>
-
-    <!-- 表单内容 -->
-    <scroll-view class="form-content" scroll-y="true">
-      <!-- 图片上传 -->
-      <view class="form-item">
-        <text class="form-label">商品图片</text>
-        <view class="image-list">
-          <view v-for="(image, index) in formRef.images" :key="index" class="image-item">
-            <image :src="image" mode="aspectFill" class="preview-image" @click="onPreviewImage({ index })" />
-            <view class="delete-btn" @click="onDeleteImage({ index })">×</view>
-          </view>
-          <view v-if="formRef.images.length < 9" class="upload-btn" @click="onChooseImage">
-            <text class="upload-icon">+</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 商品名称 -->
-      <view class="form-item">
-        <text class="form-label">商品名称</text>
-        <input v-model="formRef.name" type="text" class="form-input" placeholder="请输入商品名称" />
-      </view>
-
-      <!-- 商品描述 -->
-      <view class="form-item">
-        <text class="form-label">商品描述</text>
-        <textarea v-model="formRef.description" class="form-textarea" placeholder="请输入商品描述" />
-      </view>
-
-      <!-- 商品价格 -->
-      <view class="form-item">
-        <text class="form-label">商品价格</text>
-        <input v-model="formRef.price" type="digit" class="form-input" placeholder="请输入商品价格" @input="onPriceInput"
-          :maxlength="10" />
-      </view>
-
-      <!-- 商品分类 -->
-      <view class="form-item">
-        <text class="form-label">商品分类</text>
-        <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
-          <view class="category-list">
-            <view v-for="category in categoriesRef" :key="category.objectId" class="category-item"
-              :class="{ active: selectedCategoryId === category.objectId }" @click="onSelectCategory(category)">
-              <text class="category-name">{{ category.name }}</text>
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </scroll-view>
-
-    <!-- 底部按钮 -->
-    <view class="bottom-actions">
-      <button class="submit-btn" @click="onSubmitForm">{{ submitTextRef }}</button>
-    </view>
-  </view>
-</template>
-
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
+import PcBack from '@/components/common/pc-back.vue'
 
 const AV = getApp().globalData.AV
 
@@ -347,13 +280,73 @@ async function onSubmitForm() {
 
   return Promise.resolve()
 }
-
-// 返回上一页
-function onClickBack() {
-  uni.navigateBack()
-  return Promise.resolve()
-}
 </script>
+
+<template>
+  <view class="admin-edit">
+    <pc-empty-status />
+
+    <!-- 顶部导航 -->
+    <view class="nav-header">
+      <pc-back />
+      <text class="nav-title">{{ modeRef === 'add' ? '新增商品' : '编辑商品' }}</text>
+    </view>
+
+    <!-- 表单内容 -->
+    <scroll-view class="form-content" scroll-y="true">
+      <!-- 图片上传 -->
+      <view class="form-item">
+        <text class="form-label">商品图片</text>
+        <view class="image-list">
+          <view v-for="(image, index) in formRef.images" :key="index" class="image-item">
+            <image :src="image" mode="aspectFill" class="preview-image" @click="onPreviewImage({ index })" />
+            <view class="delete-btn" @click="onDeleteImage({ index })">×</view>
+          </view>
+          <view v-if="formRef.images.length < 9" class="upload-btn" @click="onChooseImage">
+            <text class="upload-icon">+</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 商品名称 -->
+      <view class="form-item">
+        <text class="form-label">商品名称</text>
+        <input v-model="formRef.name" type="text" class="form-input" placeholder="请输入商品名称" />
+      </view>
+
+      <!-- 商品描述 -->
+      <view class="form-item">
+        <text class="form-label">商品描述</text>
+        <textarea v-model="formRef.description" class="form-textarea" placeholder="请输入商品描述" />
+      </view>
+
+      <!-- 商品价格 -->
+      <view class="form-item">
+        <text class="form-label">商品价格</text>
+        <input v-model="formRef.price" type="digit" class="form-input" placeholder="请输入商品价格" @input="onPriceInput"
+          :maxlength="10" />
+      </view>
+
+      <!-- 商品分类 -->
+      <view class="form-item">
+        <text class="form-label">商品分类</text>
+        <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
+          <view class="category-list">
+            <view v-for="category in categoriesRef" :key="category.objectId" class="category-item"
+              :class="{ active: selectedCategoryId === category.objectId }" @click="onSelectCategory(category)">
+              <text class="category-name">{{ category.name }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部按钮 -->
+    <view class="bottom-actions">
+      <button class="submit-btn" @click="onSubmitForm">{{ submitTextRef }}</button>
+    </view>
+  </view>
+</template>
 
 <style>
 .admin-edit {
