@@ -5,6 +5,7 @@ const adapters = require("./static/libs/leancloud-adapters-weapp.min.js")
 AV.setAdapters(adapters)
 // #endif
 
+// 初始化 LeanCloud，请使用自己的参数，具体查看LeanCloud文档。
 AV.init({
   appId: 'T3HBskk0nUnVWLCNZuuBwF42-gzGzoHsz',
   appKey: 'RfVN029z18rpX2h1jeO4r5vA',
