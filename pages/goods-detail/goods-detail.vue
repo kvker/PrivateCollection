@@ -32,7 +32,7 @@ async function querySimilarGoods(categoryId, currentGoodsId) {
   // 最多4个
   query.limit(4)
   const results = await query.find()
-  return results.map(item => item.toJSON())
+  return results.map((item) => item.toJSON())
 }
 
 onLoad(async (options) => {
@@ -44,11 +44,11 @@ onLoad(async (options) => {
     imagesRef.value = goods.images || []
 
     // 2. 加载相似商品
-    if(goods.categoryRef) {
+    if (goods.categoryRef) {
       const similarGoods = await querySimilarGoods(goods.categoryRef.objectId, goods.objectId)
       similarGoodsRef.value = similarGoods
     }
-  } catch(error) {
+  } catch (error) {
     console.error('加载商品详情失败:', error)
     uni.showToast({
       title: '加载失败:' + error.message,
@@ -59,16 +59,6 @@ onLoad(async (options) => {
     }, 1500)
   }
 })
-
-function onClickShare() {
-  // 使用第一张图片作为分享图
-  const shareImage = imagesRef.value[0] || ''
-  uni.showShareMenu({
-    withShareTicket: true,
-    menus: ['shareAppMessage']
-  })
-  return Promise.resolve()
-}
 
 // 分享给朋友
 onShareAppMessage(() => {
@@ -102,63 +92,83 @@ function onClickSimilarGoods(goods) {
 
 <template>
   <view class="goods-detail">
-    <pc-empty-status />
-    <!-- 顶部导航 -->
-    <view class="nav-header">
-      <pc-back />
-      <view class="right-actions">
-        <view class="share-btn" @click="onClickShare">
-          <image src="/static/icons/share.png" mode="aspectFit" class="action-icon" />
-        </view>
+    <view class="fixed-top">
+      <pc-empty-status />
+      <!-- 顶部导航 -->
+      <view class="nav-header">
+        <pc-back />
       </view>
     </view>
 
-    <!-- 内容区域 -->
-    <scroll-view class="content-area" scroll-y="true">
-      <!-- 轮播图 -->
-      <swiper class="swiper" circular :current="currentSwiperRef" @change="onSwiperChange">
-        <swiper-item v-for="(image, index) in imagesRef" :key="index" @click="onPreviewImage(index)">
-          <image :src="image" mode="aspectFill" class="swiper-image" />
+    <!-- 轮播图 -->
+    <view class="swiper-container">
+      <swiper
+        class="swiper"
+        circular
+        :current="currentSwiperRef"
+        @change="onSwiperChange">
+        <swiper-item
+          v-for="(image, index) in imagesRef"
+          :key="index"
+          @click="onPreviewImage(index)">
+          <image
+            :src="image"
+            mode="aspectFill"
+            class="swiper-image" />
         </swiper-item>
       </swiper>
       <view class="swiper-indicator">
         <text class="indicator-text">{{ currentSwiperRef + 1 }}/{{ imagesRef.length }}</text>
       </view>
+    </view>
 
-      <!-- 商品信息 -->
-      <view class="goods-info">
-        <text class="goods-name">{{ goodsRef?.name }}</text>
-        <view class="price-tag">
-          <text class="price">¥{{ goodsRef?.price }}</text>
-          <text class="tag">{{ goodsRef?.categoryRef?.name }}</text>
-        </view>
+    <!-- 商品信息 -->
+    <view class="goods-info">
+      <text class="goods-name">{{ goodsRef?.name }}</text>
+      <view class="price-tag">
+        <text class="price">¥{{ goodsRef?.price }}</text>
+        <text class="tag">{{ goodsRef?.categoryRef?.name }}</text>
       </view>
+    </view>
 
-      <!-- 商品描述 -->
-      <view class="goods-desc">
-        <view class="section-title">商品描述</view>
-        <text class="desc-text">{{ goodsRef?.description }}</text>
-      </view>
+    <!-- 商品描述 -->
+    <view class="goods-desc">
+      <view class="section-title">商品描述</view>
+      <text class="desc-text">{{ goodsRef?.description }}</text>
+    </view>
 
-      <!-- 相似物品 -->
-      <view v-if="similarGoodsRef.length > 0" class="similar-goods">
-        <view class="section-title">相似的物品</view>
-        <scroll-view class="similar-list" scroll-x="true">
-          <view v-for="item in similarGoodsRef" :key="item.objectId" class="similar-item"
-            @click="onClickSimilarGoods(item)">
-            <image :src="item.images[0]" mode="aspectFill" class="similar-image" />
-            <view class="similar-info">
-              <text class="similar-name">{{ item.name }}</text>
-              <text class="similar-price">¥{{ item.price }}</text>
-            </view>
+    <!-- 相似物品 -->
+    <view
+      v-if="similarGoodsRef.length > 0"
+      class="similar-goods">
+      <view class="section-title">相似的物品</view>
+      <scroll-view
+        class="similar-list"
+        scroll-x="true">
+        <view
+          v-for="item in similarGoodsRef"
+          :key="item.objectId"
+          class="similar-item"
+          @click="onClickSimilarGoods(item)">
+          <image
+            :src="item.images[0]"
+            mode="aspectFill"
+            class="similar-image" />
+          <view class="similar-info">
+            <text class="similar-name">{{ item.name }}</text>
+            <text class="similar-price">¥{{ item.price }}</text>
           </view>
-        </scroll-view>
-      </view>
-    </scroll-view>
+        </view>
+      </scroll-view>
+    </view>
 
     <!-- 底部操作栏 -->
     <view class="bottom-actions">
-      <button class="chat-btn full-width" open-type="contact">找客服，聊一聊</button>
+      <button
+        class="chat-btn full-width"
+        open-type="contact">
+        找客服，聊一聊
+      </button>
     </view>
   </view>
 </template>
@@ -166,10 +176,17 @@ function onClickSimilarGoods(goods) {
 <style>
 .goods-detail {
   width: 100%;
-  height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
+}
+
+.fixed-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 
 .nav-header {
@@ -180,33 +197,8 @@ function onClickSimilarGoods(goods) {
   padding: 0 32rpx;
 }
 
-.right-actions {
-  display: flex;
-  align-items: center;
-  gap: 32rpx;
-}
-
-.favorite-btn,
-.share-btn {
-  display: flex;
-  align-items: center;
-}
-
-.action-icon {
-  width: 48rpx;
-  height: 48rpx;
-}
-
-.favorite-count {
-  font-size: 24rpx;
-  color: #fff;
-  margin-left: 8rpx;
-}
-
-.content-area {
+.swiper-container {
   position: relative;
-  flex: 1;
-  margin-bottom: 240rpx;
 }
 
 .swiper {
@@ -281,7 +273,7 @@ function onClickSimilarGoods(goods) {
 .similar-goods {
   background: #fff;
   padding: 32rpx;
-  margin-bottom: 320rpx;
+  margin-bottom: 40rpx;
 }
 
 .section-title {
@@ -333,35 +325,20 @@ function onClickSimilarGoods(goods) {
 }
 
 .bottom-actions {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 64rpx;
   height: 120rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 32rpx;
-}
-
-.chat-btn,
-.offer-btn {
-  width: 320rpx;
-  height: 80rpx;
-  border-radius: 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
-}
-
-.full-width {
-  width: 100%;
+  margin-bottom: 80rpx;
 }
 
 .chat-btn {
   background: #07c160;
   color: #fff;
+}
+
+.full-width {
+  width: 100%;
 }
 </style>
