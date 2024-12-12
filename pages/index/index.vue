@@ -27,6 +27,7 @@ AV.User.current()?.getRoles().then(roleLcObjectList => {
 async function queryCategoryList() {
   const query = new AV.Query('Category')
   query.ascending('sort')
+  query.notEqualTo('disabled', true)
   const results = await query.find()
   return results.map(item => item.toJSON())
 }
