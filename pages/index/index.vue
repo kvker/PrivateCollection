@@ -18,10 +18,12 @@ const hasMoreRef = ref(true)
 const searchKeywordRef = ref('')
 const isAdminRef = ref(false)
 
-AV.User.current()?.getRoles().then(roleLcObjectList => {
-  const adminRole = roleLcObjectList.find(i => i.get('name').toLowerCase().includes('admin'))
-  isAdminRef.value = !!adminRole
-})
+AV.User.current()
+  ?.getRoles()
+  .then((roleLcObjectList) => {
+    const adminRole = roleLcObjectList.find((i) => i.get('name').toLowerCase().includes('admin'))
+    isAdminRef.value = !!adminRole
+  })
 
 // 查询分类列表
 async function queryCategoryList() {
@@ -29,7 +31,7 @@ async function queryCategoryList() {
   query.ascending('sort')
   query.notEqualTo('disabled', true)
   const results = await query.find()
-  return results.map(item => item.toJSON())
+  return results.map((item) => item.toJSON())
 }
 
 // 查询商品列表
@@ -39,18 +41,18 @@ async function queryGoodsList(page = 1, keyword = '') {
   query.limit(PAGE_SIZE)
   query.skip((page - 1) * PAGE_SIZE)
   // 如果有搜索关键词
-  if(keyword) {
+  if (keyword) {
     query.contains('name', keyword)
   }
   // 包含分类信息
   query.include('categoryRef')
 
   const results = await query.find()
-  if(results.length < PAGE_SIZE) {
+  if (results.length < PAGE_SIZE) {
     hasMoreRef.value = false
   }
 
-  return results.map(item => item.toJSON())
+  return results.map((item) => item.toJSON())
 }
 
 // 下拉刷新
@@ -69,13 +71,13 @@ const onRefresh = async () => {
 
 // 上拉加载更多
 const onLoadMore = async () => {
-  if(!hasMoreRef.value) return Promise.resolve()
-  if(isLoadingRef.value) return Promise.resolve()
+  if (!hasMoreRef.value) return Promise.resolve()
+  if (isLoadingRef.value) return Promise.resolve()
   isLoadingRef.value = true
   try {
     const nextPage = pageRef.value + 1
     const newGoods = await queryGoodsList(nextPage, searchKeywordRef.value)
-    if(newGoods.length > 0) {
+    if (newGoods.length > 0) {
       recentItemsRef.value.push(...newGoods)
       pageRef.value = nextPage
     }
@@ -96,7 +98,7 @@ async function onSearch(e) {
   try {
     const goods = await queryGoodsList(1, keyword)
     recentItemsRef.value = goods
-  } catch(error) {
+  } catch (error) {
     console.error('搜索商品失败:', error)
     uni.showToast({
       title: '搜索失败:' + error.message,
@@ -116,7 +118,7 @@ onLoad(async () => {
     // 2. 加载商品列表
     const goods = await queryGoodsList()
     recentItemsRef.value = goods
-  } catch(error) {
+  } catch (error) {
     console.error('加载数据失败:', error)
     uni.showToast({
       title: '加载失败:' + error.message,
@@ -132,15 +134,13 @@ onShow(async () => {
     recentItemsRef.value = goods
     pageRef.value = 1
     hasMoreRef.value = goods.length === PAGE_SIZE
-  } catch(error) {
+  } catch (error) {
     console.error('刷新商品列表失败:', error)
   }
 })
 
 // 点击商品
 const onClickItem = (item) => {
-  console.log('点击商品:', item)
-  // TODO: 实现商品详情跳转
   uni.navigateTo({
     url: `/pages/goods-detail/goods-detail?objectId=${item.objectId}`
   })
@@ -172,46 +172,90 @@ defineExpose({
     <view class="content-area">
       <!-- 搜索框 -->
       <view class="search-box">
-        <input type="text" placeholder="搜索商品名称" :value="searchKeywordRef" @confirm="onSearch" />
+        <input
+          type="text"
+          placeholder="搜索商品名称"
+          :value="searchKeywordRef"
+          @confirm="onSearch" />
       </view>
 
       <!-- 分类导航 -->
-      <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
+      <scroll-view
+        class="category-scroll"
+        scroll-x="true"
+        show-scrollbar="false">
         <view class="category-nav">
-          <navigator v-for="category in categoriesRef" :key="category.objectId" class="category-item"
+          <navigator
+            v-for="category in categoriesRef"
+            :key="category.objectId"
+            class="category-item"
             :url="`/pages/category/category?objectId=${category.objectId}`">
-            <image :src="category.icon || '/static/icons/toy.png'" mode="aspectFit" class="category-icon"></image>
+            <image
+              :src="category.icon || '/static/icons/toy.png'"
+              mode="aspectFit"
+              class="category-icon"></image>
             <text class="category-name">{{ category.name }}</text>
           </navigator>
         </view>
       </scroll-view>
 
       <!-- 商品列表 -->
-      <scroll-view class="recent-items" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
-        @refresherrefresh="onRefresh" @scrolltolower="onLoadMore">
-        <view class="section-title">最近好物</view>
+      <view class="section-title">最近好物</view>
+      <scroll-view
+        class="recent-items"
+        scroll-y="true"
+        refresher-enabled="true"
+        :refresher-triggered="isRefreshingRef"
+        @refresherrefresh="onRefresh"
+        @scrolltolower="onLoadMore">
         <view class="items-grid">
-          <view v-for="item in recentItemsRef" :key="item.objectId" class="item-card" @click="onClickItem(item)">
-            <image :src="item.images[0]" mode="aspectFill" class="item-image"></image>
+          <view
+            v-for="item in recentItemsRef"
+            :key="item.objectId"
+            class="item-card"
+            @click="onClickItem(item)">
+            <image
+              :src="item.images[0]"
+              mode="aspectFill"
+              class="item-image"></image>
             <view class="item-info">
-              <text class="item-name">{{ item.name }}</text>
-              <text class="item-price">¥{{ item.price }}</text>
+              <view class="item-name">
+                <text>{{ item.name }}</text>
+              </view>
+              <view class="item-price">
+                <text>¥{{ item.price }}</text>
+              </view>
             </view>
           </view>
         </view>
-        <view v-if="recentItemsRef.length === 0" class="empty-tip">
+        <view
+          v-if="recentItemsRef.length === 0"
+          class="empty-tip">
           暂无商品数据
         </view>
-        <view v-if="isLoadingRef" class="loading">加载中...</view>
-        <view v-if="!isLoadingRef && !hasMoreRef" class="no-more">
+        <view
+          v-if="isLoadingRef"
+          class="loading">
+          加载中...
+        </view>
+        <view
+          v-if="!isLoadingRef && !hasMoreRef"
+          class="no-more">
           没有更多数据了
         </view>
       </scroll-view>
     </view>
 
     <!-- 管理入口 -->
-    <navigator v-if="isAdminRef" class="admin-fab" open-type="navigateTo" url="/pages/admin/list/list">
-      <image src="/static/icons/add.png" mode="aspectFit" class="admin-icon" />
+    <navigator
+      v-if="isAdminRef"
+      class="admin-fab"
+      open-type="navigateTo"
+      url="/pages/admin/list/list">
+      <image
+        src="/static/icons/admin.png"
+        mode="aspectFit"
+        class="admin-icon" />
     </navigator>
   </view>
 </template>
@@ -220,6 +264,7 @@ defineExpose({
 .home-page {
   width: 100%;
   height: 100vh;
+  overflow: hidden;
 }
 
 .status-title {
@@ -241,7 +286,6 @@ defineExpose({
   align-items: center;
   justify-content: center;
   height: 64rpx;
-  margin-bottom: 32rpx;
 }
 
 .search-box input {
@@ -253,14 +297,12 @@ defineExpose({
 .category-scroll {
   width: 100%;
   white-space: nowrap;
-  margin-bottom: 32rpx;
 }
 
 .category-nav {
   display: flex;
   justify-content: space-between;
   padding: 20rpx 0;
-  margin-bottom: 30rpx;
 }
 
 .category-item {
@@ -348,6 +390,7 @@ defineExpose({
 }
 
 .item-price {
+  margin-top: 16rpx;
   font-size: 32rpx;
   color: #333;
   font-weight: bold;
@@ -399,7 +442,7 @@ defineExpose({
   bottom: 128rpx;
   width: 88rpx;
   height: 88rpx;
-  background: #07c160;
+  background: #ffffff;
   border-radius: 50%;
   display: flex;
   align-items: center;
