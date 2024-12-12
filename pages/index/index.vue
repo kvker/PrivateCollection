@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { onLoad, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
+import PcGoods from '@/components/common/pc-goods.vue'
 
 const AV = getApp().globalData.AV
 const PAGE_SIZE = 10
@@ -162,6 +163,13 @@ onShareAppMessage(() => {
 defineExpose({
   onRefresh
 })
+
+function onClickGoods(goods) {
+  uni.navigateTo({
+    url: `/pages/goods-detail/goods-detail?objectId=${goods.objectId}`
+  })
+  return Promise.resolve()
+}
 </script>
 
 <template>
@@ -208,25 +216,12 @@ defineExpose({
         :refresher-triggered="isRefreshingRef"
         @refresherrefresh="onRefresh"
         @scrolltolower="onLoadMore">
-        <view class="items-grid">
-          <view
+        <view class="goods-grid">
+          <pc-goods
             v-for="item in recentItemsRef"
             :key="item.objectId"
-            class="item-card"
-            @click="onClickItem(item)">
-            <image
-              :src="item.images[0]"
-              mode="aspectFill"
-              class="item-image"></image>
-            <view class="item-info">
-              <view class="item-name">
-                <text>{{ item.name }}</text>
-              </view>
-              <view class="item-price">
-                <text>¥{{ item.price }}</text>
-              </view>
-            </view>
-          </view>
+            :goods="item"
+            @click="onClickGoods" />
         </view>
         <view
           v-if="recentItemsRef.length === 0"
@@ -333,18 +328,10 @@ defineExpose({
   margin-bottom: 20rpx;
 }
 
-.items-grid {
+.goods-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20rpx;
-}
-
-.item-card {
-  background: #fff;
-  border-radius: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
-  position: relative;
 }
 
 .item-user {

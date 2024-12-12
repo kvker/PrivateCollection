@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 import PcBack from '@/components/common/pc-back.vue'
+import PcGoods from '@/components/common/pc-goods.vue'
 
 const AV = getApp().globalData.AV
 const PAGE_SIZE = 10
@@ -169,20 +170,11 @@ function onClickGoods(goods) {
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore">
       <view class="goods-grid">
-        <view
+        <pc-goods
           v-for="item in goodsListRef"
           :key="item.objectId"
-          class="goods-card"
-          @click="onClickGoods(item)">
-          <image
-            :src="item.images[0]"
-            mode="aspectFill"
-            class="goods-image"></image>
-          <view class="goods-info">
-            <text class="goods-name">{{ item.name }}</text>
-            <text class="goods-price">¥{{ item.price }}</text>
-          </view>
-        </view>
+          :goods="item"
+          @click="onClickGoods" />
       </view>
       <view
         v-if="goodsListRef.length === 0"

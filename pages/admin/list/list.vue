@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PcEmptyStatus from '@/components/common/pc-empty-status.vue'
 import PcBack from '@/components/common/pc-back.vue'
+import PcGoods from '@/components/common/pc-goods.vue'
 
 const AV = getApp().globalData.AV
 const PAGE_SIZE = 10
@@ -128,9 +129,9 @@ async function onDeleteGoods({ objectId, name }) {
 }
 
 // 点击商品
-function onClickGoods({ objectId }) {
+function onClickGoods(goods) {
   uni.navigateTo({
-    url: `/pages/admin/edit/edit?objectId=${objectId}&mode=edit`
+    url: `/pages/admin/edit/edit?objectId=${goods.objectId}&mode=edit`
   })
   return Promise.resolve()
 }
@@ -163,14 +164,13 @@ defineExpose({
     <scroll-view class="goods-list" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
       @refresherrefresh="onRefresh" @scrolltolower="onLoadMore">
       <view class="goods-grid">
-        <view v-for="item in goodsListRef" :key="item.objectId" class="goods-card" @click="onClickGoods(item)"
-          @longpress="onDeleteGoods(item)">
-          <image :src="item.images[0]" mode="aspectFill" class="goods-image" />
-          <view class="goods-info">
-            <text class="goods-name">{{ item.name }}</text>
-            <text class="goods-price">¥{{ item.price }}</text>
-          </view>
-        </view>
+        <pc-goods
+          v-for="item in goodsListRef"
+          :key="item.objectId"
+          :goods="item"
+          :is-admin="true"
+          @click="onClickGoods"
+          @delete="onDeleteGoods" />
       </view>
 
       <!-- 加载状态 -->
