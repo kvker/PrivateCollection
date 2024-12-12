@@ -1,0 +1,12 @@
+{
+  "rules": [
+    {
+      "action": "disallow",
+      "page": "pages/admin/list/list"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/admin/edit/edit"
+    }
+  ]
+}

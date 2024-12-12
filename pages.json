@@ -2,35 +2,35 @@
   "pages": [
     {
       "path": "pages/index/index",
-      "style": {}
+      "style": {
+        "navigationBarTitleText": "全部藏品列表"
+      }
     },
     {
       "path": "pages/category/category",
-      "style": {}
+      "style": {
+        "navigationBarTitleText": "分类藏品列表"
+      }
     },
     {
       "path": "pages/goods-detail/goods-detail",
+      "style": {
+        "navigationBarTitleText": "藏品详情"
+      }
+    },
+    {
+      "path": "pages/admin/list/list",
       "style": {}
     },
     {
-      "path" : "pages/admin/list/list",
-      "style" :
-      {
-        "navigationBarTitleText" : ""
-      }
-    },
-    {
-      "path" : "pages/admin/edit/edit",
-      "style" :
-      {
-        "navigationBarTitleText" : ""
-      }
+      "path": "pages/admin/edit/edit",
+      "style": {}
     }
   ],
   "globalStyle": {
     "navigationStyle": "custom",
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "有友藏",
+    "navigationBarTitleText": "有友藏-中古藏品分享交易平台",
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   }
