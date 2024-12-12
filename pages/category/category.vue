@@ -31,7 +31,7 @@ async function queryGoodsList(page = 1, keyword = '') {
   const category = AV.Object.createWithoutData('Category', categoryRef.value.objectId)
   query.equalTo('categoryRef', category)
   // 如果有搜索关键词
-  if(keyword) {
+  if (keyword) {
     query.contains('name', keyword)
   }
   query.descending('updatedAt')
@@ -40,11 +40,11 @@ async function queryGoodsList(page = 1, keyword = '') {
   query.include('categoryRef')
 
   const results = await query.find()
-  if(results.length < PAGE_SIZE) {
+  if (results.length < PAGE_SIZE) {
     hasMoreRef.value = false
   }
 
-  return results.map(item => item.toJSON())
+  return results.map((item) => item.toJSON())
 }
 
 // 页面加载
@@ -58,7 +58,7 @@ onLoad(async ({ objectId }) => {
     // 2. 加载商品列表
     const goods = await queryGoodsList()
     goodsListRef.value = goods
-  } catch(error) {
+  } catch (error) {
     console.error('加载商品列表失败:', error)
     uni.showToast({
       title: '加载失败:' + error.message,
@@ -78,7 +78,7 @@ async function onSearch(e) {
   try {
     const goods = await queryGoodsList(1, keyword)
     goodsListRef.value = goods
-  } catch(error) {
+  } catch (error) {
     console.error('搜索商品失败:', error)
     uni.showToast({
       title: '搜索失败:' + error.message,
@@ -96,7 +96,7 @@ async function onRefresh() {
     goodsListRef.value = goods
     pageRef.value = 1
     hasMoreRef.value = goods.length === PAGE_SIZE
-  } catch(error) {
+  } catch (error) {
     console.error('刷新商品列表失败:', error)
     uni.showToast({
       title: '刷新失败:' + error.message,
@@ -110,17 +110,17 @@ async function onRefresh() {
 
 // 加载更多
 async function onLoadMore() {
-  if(!hasMoreRef.value) return Promise.resolve()
-  if(isLoadingRef.value) return Promise.resolve()
+  if (!hasMoreRef.value) return Promise.resolve()
+  if (isLoadingRef.value) return Promise.resolve()
   isLoadingRef.value = true
   try {
     const nextPage = pageRef.value + 1
     const newGoods = await queryGoodsList(nextPage, searchKeywordRef.value)
-    if(newGoods.length > 0) {
+    if (newGoods.length > 0) {
       goodsListRef.value.push(...newGoods)
       pageRef.value = nextPage
     }
-  } catch(error) {
+  } catch (error) {
     console.error('加载更多商品失败:', error)
     uni.showToast({
       title: '加载失败:' + error.message,
@@ -152,27 +152,51 @@ function onClickGoods(goods) {
         <text class="category-title">{{ categoryNameRef }}</text>
       </view>
       <view class="search-box">
-        <input type="text" v-model="searchKeywordRef" placeholder="搜索商品名称" @confirm="onSearch" />
+        <input
+          type="text"
+          v-model="searchKeywordRef"
+          placeholder="搜索商品名称"
+          @confirm="onSearch" />
       </view>
     </view>
 
     <!-- 商品列表 -->
-    <scroll-view class="goods-list" scroll-y="true" refresher-enabled="true" :refresher-triggered="isRefreshingRef"
-      @refresherrefresh="onRefresh" @scrolltolower="onLoadMore">
+    <scroll-view
+      class="goods-list"
+      scroll-y="true"
+      refresher-enabled="true"
+      :refresher-triggered="isRefreshingRef"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="onLoadMore">
       <view class="goods-grid">
-        <view v-for="item in goodsListRef" :key="item.objectId" class="goods-card" @click="onClickGoods(item)">
-          <image :src="item.images[0]" mode="aspectFill" class="goods-image"></image>
+        <view
+          v-for="item in goodsListRef"
+          :key="item.objectId"
+          class="goods-card"
+          @click="onClickGoods(item)">
+          <image
+            :src="item.images[0]"
+            mode="aspectFill"
+            class="goods-image"></image>
           <view class="goods-info">
             <text class="goods-name">{{ item.name }}</text>
             <text class="goods-price">¥{{ item.price }}</text>
           </view>
         </view>
       </view>
-      <view v-if="goodsListRef.length === 0" class="empty-tip">
+      <view
+        v-if="goodsListRef.length === 0"
+        class="empty-tip">
         暂无商品数据
       </view>
-      <view v-if="isLoadingRef" class="loading">加载中...</view>
-      <view v-if="!isLoadingRef && !hasMoreRef" class="no-more">
+      <view
+        v-if="isLoadingRef"
+        class="loading">
+        加载中...
+      </view>
+      <view
+        v-if="!isLoadingRef && !hasMoreRef"
+        class="no-more">
         没有更多数据了
       </view>
     </scroll-view>
@@ -191,7 +215,7 @@ function onClickGoods(goods) {
 .nav-header {
   display: flex;
   align-items: center;
-  padding: 0 32rpx 0 0;
+  height: 112rpx;
 }
 
 .back-btn {
@@ -220,7 +244,6 @@ function onClickGoods(goods) {
   align-items: center;
   justify-content: space-between;
   padding: 0 16rpx;
-  margin: 0 32rpx 32rpx 0;
   background: #fff;
   border-radius: 30rpx;
 }
@@ -237,7 +260,8 @@ function onClickGoods(goods) {
 }
 
 .goods-list {
-  flex: 1;
+  /* flex: 1; */
+  height: calc(100% - 200rpx);
   padding: 20rpx;
 }
 

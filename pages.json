@@ -28,9 +28,6 @@
     }
   ],
   "globalStyle": {
-    "navigationBarRightButton": {
-      // "hide": true
-    },
     "navigationStyle": "custom",
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "有友藏",

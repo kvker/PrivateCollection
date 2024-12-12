@@ -15,7 +15,7 @@ async function queryCategoryList() {
   const query = new AV.Query('Category')
   query.ascending('sort') // 按sort升序
   const results = await query.find()
-  return results.map(item => item.toJSON())
+  return results.map((item) => item.toJSON())
 }
 
 // 选择分类
@@ -34,12 +34,12 @@ onLoad(async ({ mode, objectId }) => {
     categoriesRef.value = categories
 
     // 默认选中第一个分类
-    if(categories.length > 0) {
+    if (categories.length > 0) {
       selectedCategoryId.value = categories[0].objectId
     }
 
     // 2. 如果是编辑模式,加载商品详情
-    if(objectId) {
+    if (objectId) {
       goodsIdRef.value = objectId
       try {
         uni.showLoading({ title: '加载中...' })
@@ -52,12 +52,12 @@ onLoad(async ({ mode, objectId }) => {
         formRef.value = goods.toJSON()
         // 设置选中的分类
         const category = goods.get('categoryRef')
-        if(category) {
+        if (category) {
           selectedCategoryId.value = category.id
         }
 
         uni.hideLoading()
-      } catch(error) {
+      } catch (error) {
         console.error('加载商品详情失败:', error)
         uni.showToast({
           title: '加载失败:' + error.message,
@@ -68,7 +68,7 @@ onLoad(async ({ mode, objectId }) => {
         }, 1500)
       }
     }
-  } catch(error) {
+  } catch (error) {
     console.error('加载分类列表失败:', error)
     uni.showToast({
       title: '加载失败:' + error.message,
@@ -91,7 +91,7 @@ const formRef = ref({
 
 // 按钮文本
 const submitTextRef = computed(() => {
-  switch(modeRef.value) {
+  switch (modeRef.value) {
     case 'add':
       return '提交'
     case 'edit':
@@ -109,10 +109,9 @@ function onChooseImage() {
     sourceType: ['album', 'camera'],
     success: ({ tempFilePaths }) => {
       // 压缩图片
-      Promise.all(tempFilePaths.map(path => compressImage(path)))
-        .then(compressedPaths => {
-          formRef.value.images.push(...compressedPaths)
-        })
+      Promise.all(tempFilePaths.map((path) => compressImage(path))).then((compressedPaths) => {
+        formRef.value.images.push(...compressedPaths)
+      })
     }
   })
   return Promise.resolve()
@@ -129,7 +128,7 @@ function compressImage(path) {
         uni.getFileInfo({
           filePath: tempFilePath,
           success: ({ size }) => {
-            if(size > 2 * 1024 * 1024) {
+            if (size > 2 * 1024 * 1024) {
               // 如果还是超过2MB，继续压缩
               compressImage(tempFilePath).then(resolve)
             } else {
@@ -165,11 +164,11 @@ function onPriceInput(e) {
   // 只允许数字和小数点
   let newValue = value.replace(/[^\d.]/g, '')
   // 只允许一个小数点
-  if(newValue.split('.').length > 2) {
+  if (newValue.split('.').length > 2) {
     newValue = newValue.replace(/\.+/g, '.')
   }
   // 限制小数点后两位
-  if(newValue.includes('.')) {
+  if (newValue.includes('.')) {
     const [integer, decimal] = newValue.split('.')
     newValue = `${integer}.${decimal.slice(0, 2)}`
   }
@@ -181,31 +180,31 @@ function onPriceInput(e) {
 // 提交表单
 async function onSubmitForm() {
   // 表单验证
-  if(!formRef.value.images.length) {
+  if (!formRef.value.images.length) {
     uni.showToast({ title: '请上传商品图片', icon: 'none' })
     return Promise.resolve()
   }
-  if(!formRef.value.name) {
+  if (!formRef.value.name) {
     uni.showToast({ title: '请输入商品名称', icon: 'none' })
     return Promise.resolve()
   }
-  if(!formRef.value.description) {
+  if (!formRef.value.description) {
     uni.showToast({ title: '请输入商品描述', icon: 'none' })
     return Promise.resolve()
   }
-  if(!formRef.value.price) {
+  if (!formRef.value.price) {
     uni.showToast({ title: '请输入商品价格', icon: 'none' })
     return Promise.resolve()
   }
   // 价格格式验证
   const priceNum = Number(formRef.value.price)
-  if(isNaN(priceNum) || priceNum <= 0) {
+  if (isNaN(priceNum) || priceNum <= 0) {
     uni.showToast({ title: '请输入有效的价格', icon: 'none' })
     return Promise.resolve()
   }
 
   // 分类验证
-  if(!selectedCategoryId.value) {
+  if (!selectedCategoryId.value) {
     uni.showToast({ title: '请选择商品分类', icon: 'none' })
     return Promise.resolve()
   }
@@ -214,29 +213,32 @@ async function onSubmitForm() {
     uni.showLoading({ title: '提交中...' })
 
     // 1. 先上传图片到LeanCloud
-    const imageFiles = await Promise.all(formRef.value.images.map(async (imagePath) => {
-      if(imagePath.startsWith('https')) {
-        return { url: () => imagePath }
-      }
-      const file = new AV.File(`goods_${Date.now()}.png`, {
-        blob: {
-          uri: imagePath,
+    const imageFiles = await Promise.all(
+      formRef.value.images.map(async (imagePath) => {
+        if (imagePath.startsWith('https')) {
+          return { url: () => imagePath }
         }
+        const file = new AV.File(`goods_${Date.now()}.png`, {
+          blob: {
+            uri: imagePath
+          }
+        })
+        return file.save()
       })
-      return file.save()
-    }))
+    )
 
     // 2. 创建或更新商品对象
     const Goods = AV.Object.extend('Goods')
-    const goods = modeRef.value === 'add' ?
-      new Goods() :
-      AV.Object.createWithoutData('Goods', goodsIdRef.value)
+    const goods = modeRef.value === 'add' ? new Goods() : AV.Object.createWithoutData('Goods', goodsIdRef.value)
 
     // 3. 设置商品属性
     goods.set('name', formRef.value.name)
     goods.set('description', formRef.value.description)
     goods.set('price', priceNum)
-    goods.set('images', imageFiles.map(file => file.url()))
+    goods.set(
+      'images',
+      imageFiles.map((file) => file.url())
+    )
     // 设置分类关联
     const category = AV.Object.createWithoutData('Category', selectedCategoryId.value)
     goods.set('categoryRef', category)
@@ -261,14 +263,13 @@ async function onSubmitForm() {
           const pages = getCurrentPages()
           const listPage = pages[pages.length - 1]
           // 调用list页面的刷新方法
-          if(listPage && listPage.$vm && listPage.$vm.onRefresh) {
+          if (listPage && listPage.$vm && listPage.$vm.onRefresh) {
             listPage.$vm.onRefresh()
           }
         }
       })
     }, 1500)
-
-  } catch(error) {
+  } catch (error) {
     uni.hideLoading()
     uni.showToast({
       title: '提交失败：' + error.message,
@@ -290,7 +291,7 @@ async function onDeleteGoods() {
       confirmText: '删除',
       confirmColor: '#ff4d4f'
     })
-    if(!confirm) return
+    if (!confirm) return
 
     uni.showLoading({ title: '删除中...' })
 
@@ -311,14 +312,13 @@ async function onDeleteGoods() {
         success: () => {
           const pages = getCurrentPages()
           const listPage = pages[pages.length - 1]
-          if(listPage && listPage.$vm && listPage.$vm.onRefresh) {
+          if (listPage && listPage.$vm && listPage.$vm.onRefresh) {
             listPage.$vm.onRefresh()
           }
         }
       })
     }, 1500)
-
-  } catch(error) {
+  } catch (error) {
     uni.hideLoading()
     console.error('删除商品失败:', error)
     uni.showToast({
@@ -341,16 +341,32 @@ async function onDeleteGoods() {
     </view>
 
     <!-- 表单内容 -->
-    <scroll-view class="form-content" scroll-y="true">
+    <view
+      class="form-content"
+      scroll-y="true">
       <!-- 图片上传 -->
       <view class="form-item">
         <text class="form-label">商品图片</text>
         <view class="image-list">
-          <view v-for="(image, index) in formRef.images" :key="index" class="image-item">
-            <image :src="image" mode="aspectFill" class="preview-image" @click="onPreviewImage({ index })" />
-            <view class="delete-btn" @click="onDeleteImage({ index })">×</view>
+          <view
+            v-for="(image, index) in formRef.images"
+            :key="index"
+            class="image-item">
+            <image
+              :src="image"
+              mode="aspectFill"
+              class="preview-image"
+              @click="onPreviewImage({ index })" />
+            <view
+              class="delete-btn"
+              @click="onDeleteImage({ index })">
+              ×
+            </view>
           </view>
-          <view v-if="formRef.images.length < 9" class="upload-btn" @click="onChooseImage">
+          <view
+            v-if="formRef.images.length < 9"
+            class="upload-btn"
+            @click="onChooseImage">
             <text class="upload-icon">+</text>
           </view>
         </view>
@@ -359,41 +375,68 @@ async function onDeleteGoods() {
       <!-- 商品名称 -->
       <view class="form-item">
         <text class="form-label">商品名称</text>
-        <input v-model="formRef.name" type="text" class="form-input" placeholder="请输入商品名称" />
+        <input
+          v-model="formRef.name"
+          type="text"
+          class="form-input"
+          placeholder="请输入商品名称" />
       </view>
 
       <!-- 商品描述 -->
       <view class="form-item">
         <text class="form-label">商品描述</text>
-        <textarea v-model="formRef.description" class="form-textarea" placeholder="请输入商品描述" />
+        <textarea
+          v-model="formRef.description"
+          class="form-textarea"
+          placeholder="请输入商品描述" />
       </view>
 
       <!-- 商品价格 -->
       <view class="form-item">
         <text class="form-label">商品价格</text>
-        <input v-model="formRef.price" type="digit" class="form-input" placeholder="请输入商品价格" @input="onPriceInput"
+        <input
+          v-model="formRef.price"
+          type="digit"
+          class="form-input"
+          placeholder="请输入商品价格"
+          @input="onPriceInput"
           :maxlength="10" />
       </view>
 
       <!-- 商品分类 -->
       <view class="form-item">
         <text class="form-label">商品分类</text>
-        <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false">
+        <scroll-view
+          class="category-scroll"
+          scroll-x="true"
+          show-scrollbar="false">
           <view class="category-list">
-            <view v-for="category in categoriesRef" :key="category.objectId" class="category-item"
-              :class="{ active: selectedCategoryId === category.objectId }" @click="onSelectCategory(category)">
+            <view
+              v-for="category in categoriesRef"
+              :key="category.objectId"
+              class="category-item"
+              :class="{ active: selectedCategoryId === category.objectId }"
+              @click="onSelectCategory(category)">
               <text class="category-name">{{ category.name }}</text>
             </view>
           </view>
         </scroll-view>
       </view>
-    </scroll-view>
+    </view>
 
     <!-- 底部按钮 -->
     <view class="bottom-actions">
       <view class="btn-group">
-        <button v-if="modeRef === 'edit'" class="delete-btn-bottom" @click="onDeleteGoods">删除</button>
-        <button class="submit-btn" :class="{ 'full-width': modeRef === 'add' }" @click="onSubmitForm">
+        <button
+          v-if="modeRef === 'edit'"
+          class="delete-btn-bottom"
+          @click="onDeleteGoods">
+          删除
+        </button>
+        <button
+          class="submit-btn"
+          :class="{ 'full-width': modeRef === 'add' }"
+          @click="onSubmitForm">
           {{ submitTextRef }}
         </button>
       </view>
@@ -401,10 +444,8 @@ async function onDeleteGoods() {
   </view>
 </template>
 
-<style>
+<style scoped>
 .admin-edit {
-  width: 100%;
-  height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
@@ -434,9 +475,8 @@ async function onDeleteGoods() {
 }
 
 .form-content {
-  flex: 1;
   padding: 32rpx;
-  margin-bottom: 120rpx;
+  margin-bottom: 80rpx;
 }
 
 .form-item {
@@ -518,11 +558,8 @@ async function onDeleteGoods() {
 }
 
 .bottom-actions {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 32rpx;
   padding: 0 32rpx;
+  margin-bottom: 80rpx;
 }
 
 .btn-group {
